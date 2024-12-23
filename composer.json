@@ -1,0 +1,21 @@
+{
+  "name": "savia/nubefact",
+  "description": "Nubefact integration",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Enea Dhack",
+      "email": "enea@vaened.dev"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Savia\\NubeFact\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^8.2",
+    "vaened/support": "^4.2",
+    "lambdish/phunctional": "^2.1"
+  }
+}
