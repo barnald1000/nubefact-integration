@@ -16,6 +16,7 @@
   "require": {
     "php": "^8.2",
     "vaened/support": "^4.2",
-    "lambdish/phunctional": "^2.1"
+    "lambdish/phunctional": "^2.1",
+    "guzzlehttp/guzzle": "^7.0"
   }
 }
