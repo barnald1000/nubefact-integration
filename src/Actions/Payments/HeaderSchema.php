@@ -9,18 +9,18 @@ declare(strict_types=1);
 namespace Savia\NubeFact\Actions\Payments;
 
 use Savia\NubeFact\Contracts\TransactionEntry;
-use Savia\NubeFact\FinancialCalculator;
 use Savia\NubeFact\Schema;
+use Savia\NubeFact\TransactionSummarizer;
 
 final class HeaderSchema extends Schema
 {
-    private readonly FinancialCalculator $calculator;
+    private readonly TransactionSummarizer $summarizer;
 
     public function __construct(
         private readonly TransactionEntry $entry
     )
     {
-        $this->calculator = new FinancialCalculator($entry);
+        $this->summarizer = new TransactionSummarizer($entry);
     }
 
     protected function structure(): array
@@ -38,9 +38,9 @@ final class HeaderSchema extends Schema
             "fecha_de_emision"            => $this->entry->issueDate()->format('Y-m-d'),
             "moneda"                      => $this->entry->currency()->value,
             "porcentaje_de_igv"           => $this->entry->taxPercentage(),
-            "total_gravada"               => $this->calculator->netTotal(),
-            "total_igv"                   => $this->calculator->totalTaxes(),
-            "total"                       => $this->calculator->total(),
+            "total_gravada"               => $this->summarizer->taxableTotal(),
+            "total_igv"                   => $this->summarizer->totalTaxes(),
+            "total"                       => $this->summarizer->total(),
 
             "enviar_automaticamente_a_la_sunat" => true,
             "enviar_automaticamente_al_cliente" => true,
