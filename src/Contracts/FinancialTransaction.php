@@ -28,6 +28,8 @@ interface FinancialTransaction extends Totalizable
 
     public function type(): DocumentType;
 
+    public function taxPercentage(): float;
+
     public function customer(): Customer;
 
     public function issueDate(): DateTimeInterface;

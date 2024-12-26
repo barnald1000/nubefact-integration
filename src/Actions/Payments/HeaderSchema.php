@@ -37,7 +37,7 @@ final class HeaderSchema extends Schema
             "cliente_email"               => $this->entry->customer()->address(),
             "fecha_de_emision"            => $this->entry->issueDate()->format('Y-m-d'),
             "moneda"                      => $this->entry->currency()->value,
-            "porcentaje_de_igv",
+            "porcentaje_de_igv"           => $this->entry->taxPercentage(),
             "total_gravada"               => $this->calculator->netTotal(),
             "total_igv"                   => $this->calculator->totalTaxes(),
             "total"                       => $this->calculator->total(),
