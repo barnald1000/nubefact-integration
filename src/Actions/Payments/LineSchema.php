@@ -32,22 +32,22 @@ final class LineSchema extends Schema
             "cantidad"         => $this->item->quantity(),
             "valor_unitario"   => $this->createUnitaryValue(),
             "precio_unitario"  => $this->createUnitaryPrice(),
-            "descuento"        => $this->calculator->totalDiscounts(),
-            "subtotal"         => $this->calculator->netTotal(),
+            "descuento"        => $this->item->totalDiscounts(),
+            "subtotal"         => $this->item->netTotal(),
             "tipo_de_igv"      => $this->calculator->generateIVGType()->value,
-            "igv"              => $this->calculator->totalTaxes(),
-            "total"            => $this->calculator->total(),
+            "igv"              => $this->item->totalTaxes(),
+            "total"            => $this->item->total(),
         ];
     }
 
     private function createUnitaryValue(): float
     {
-        return $this->calculator->netTotal() / $this->item->quantity();
+        return $this->item->netTotal() / $this->item->quantity();
     }
 
     private function createUnitaryPrice(): float
     {
-        return $this->calculator->total() / $this->item->quantity();
+        return $this->item->total() / $this->item->quantity();
     }
 
     protected static function required(): array

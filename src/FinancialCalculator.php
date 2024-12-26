@@ -19,26 +19,6 @@ final readonly class FinancialCalculator
     {
     }
 
-    public function total(): float
-    {
-        return $this->target->total();
-    }
-
-    public function netTotal(): float
-    {
-        return $this->target->netTotal();
-    }
-
-    public function totalDiscounts(): float
-    {
-        return $this->target->totalDiscounts();
-    }
-
-    public function totalTaxes(): float
-    {
-        return $this->target->totalTaxes();
-    }
-
     public function generateIVGType(): IGVType
     {
         return IGVType::GravadoOnerous;
