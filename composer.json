@@ -13,10 +13,19 @@
       "Savia\\NubeFact\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "Savia\\NubeFact\\Tests\\": "tests/"
+    }
+  },
   "require": {
     "php": "^8.2",
     "vaened/support": "^4.2",
     "lambdish/phunctional": "^2.1",
     "guzzlehttp/guzzle": "^7.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5",
+    "symfony/var-dumper": "^7.2"
   }
 }
