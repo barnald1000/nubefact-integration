@@ -19,15 +19,18 @@ final readonly class TransactionSummarizer
     /**
      * Calculates the "Total Gravado" (Taxable Total) of the entity.
      *
-     * The "Total Gravado" represents the total amount of operations that are subject
-     * to tax payment. This value includes the price of the products or services plus
-     * the corresponding taxes.
+     * The "Total Gravado" represents the total amount of the sale or service, before
+     * the application of any taxes. This value serves as the base for calculating the
+     * corresponding tax amount (such as the IGV or IVA tax).
+     *
+     * The "Total Gravado" does not include the tax amount itself, but only the base
+     * value of the transaction that is subject to taxation.
      *
      * @return float The "Total Gravado" (Taxable Total) of the entity.
      */
     public function taxableTotal(): float
     {
-        return $this->transaction->total();
+        return $this->transaction->netTotal();
     }
 
     /**
