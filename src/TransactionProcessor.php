@@ -35,13 +35,11 @@ final readonly class TransactionProcessor
     private function sendAndLog(): callable
     {
         return function (FinancialTransaction $transaction): Response {
-            $response = null;
-
             try {
                 $response = $this->sender->send($transaction);
                 return $this->buildSuccessResponseFor($transaction, $response);
             } catch (RequestException $exception) {
-                return $this->buildErrorResponseFor($transaction, $exception, $response);
+                return $this->buildErrorResponseFor($transaction, $exception, $exception->getResponse());
             }
         };
     }
