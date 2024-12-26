@@ -66,4 +66,16 @@ final class LineSchema extends Schema
             "total",
         ];
     }
+
+    protected static function valuesToRound(): array
+    {
+        return [
+            "valor_unitario",
+            "precio_unitario",
+            "descuento",
+            "subtotal",
+            "igv",
+            "total",
+        ];
+    }
 }

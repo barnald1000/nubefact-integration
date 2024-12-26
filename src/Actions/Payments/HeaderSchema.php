@@ -67,4 +67,13 @@ final class HeaderSchema extends Schema
             "total",
         ];
     }
+
+    protected static function valuesToRound(): array
+    {
+        return [
+            "total_gravada",
+            "total_igv",
+            "total",
+        ];
+    }
 }
