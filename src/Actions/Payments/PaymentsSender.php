@@ -28,9 +28,8 @@ final readonly class PaymentsSender implements Sender
 
     public function send(FinancialTransaction $transaction): ResponseInterface
     {
-        if (!$transaction instanceof TransactionEntry) {
-            throw new InvalidArgumentException(sprintf("Transaction must be an instance of %s", TransactionEntry::class));
-        }
+        $transaction instanceof TransactionEntry ||
+        throw new InvalidArgumentException(sprintf("Transaction must be an instance of %s", TransactionEntry::class));
 
         $header = new HeaderSchema($transaction);
 
