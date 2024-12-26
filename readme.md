@@ -19,7 +19,7 @@ This library allows you to easily send payment to the NubeFact platform.
 Here's a basic example of how to use the library:
 
 ```php
-$requests = $this->respository->getAllRequests();
+$requests = $this->repository->getAllRequests();
 
 $service   = new GuzzleNubeFactService('https://api.nubefact.com', 'token');
 $sender    = new PaymentsSender($service);
