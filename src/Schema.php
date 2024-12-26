@@ -31,7 +31,7 @@ abstract class Schema
         each(
             static fn($required) => key_exists($required, $structure) ||
                 throw new InvalidPaymentStructure("The required key `$required` is missing from the payment structure."),
-            self::required()
+            static::required()
         );
     }
 }
