@@ -34,7 +34,7 @@ final class HeaderSchema extends Schema
             "cliente_numero_de_documento" => $this->entry->customer()->identificationNumber(),
             "cliente_denominacion"        => $this->entry->customer()->denomination(),
             "cliente_direccion"           => $this->entry->customer()->address(),
-            "cliente_email"               => $this->entry->customer()->address(),
+            "cliente_email"               => $this->entry->customer()->email(),
             "fecha_de_emision"            => $this->entry->issueDate()->format('Y-m-d'),
             "moneda"                      => $this->entry->currency()->value,
             "porcentaje_de_igv"           => $this->entry->taxPercentage(),
