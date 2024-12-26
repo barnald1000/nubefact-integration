@@ -6,7 +6,7 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact;
+namespace Savia\NubeFact\Contracts;
 
 interface TaxEvaluator
 {
