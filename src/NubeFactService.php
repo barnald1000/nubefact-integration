@@ -11,6 +11,7 @@ namespace Savia\NubeFact;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\ResponseInterface;
+use Savia\NubeFact\Keywords\Operation;
 
 use function array_merge;
 use function sprintf;

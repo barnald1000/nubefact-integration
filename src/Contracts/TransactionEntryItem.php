@@ -16,7 +16,7 @@ namespace Savia\NubeFact\Contracts;
  */
 interface TransactionEntryItem extends Totalizable
 {
-    public function code(): string;
+    public function code(): ?string;
 
     public function description(): string;
 

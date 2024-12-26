@@ -13,8 +13,8 @@ use Psr\Http\Message\ResponseInterface;
 use Savia\NubeFact\Contracts\FinancialTransaction;
 use Savia\NubeFact\Contracts\TransactionEntry;
 use Savia\NubeFact\Contracts\TransactionEntryItem;
+use Savia\NubeFact\Keywords\Operation;
 use Savia\NubeFact\NubeFactService;
-use Savia\NubeFact\Operation;
 use Savia\NubeFact\Sender;
 
 use function array_merge;
