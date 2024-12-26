@@ -17,4 +17,9 @@ final class FinancialTransactions extends SecureList
     {
         return FinancialTransaction::class;
     }
+
+    public static function from(iterable $transactions): self
+    {
+        return new self($transactions);
+    }
 }
