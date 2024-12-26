@@ -25,7 +25,9 @@ $service   = new GuzzleNubeFactService('https://api.nubefact.com', 'token');
 $sender    = new PaymentsSender($service);
 $processor = new TransactionProcessor($sender);
 
-$transactions = $requests->map(static fn(array $raw) => new SingleEntryItemTransaction($raw));
+$transactions = $requests->map(
+    static fn(array $raw) => new SingleEntryItemTransaction($raw)
+);
 
 $responses = $processor->process($transactions);
 
