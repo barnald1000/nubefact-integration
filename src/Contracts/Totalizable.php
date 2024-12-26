@@ -17,7 +17,6 @@ namespace Savia\NubeFact\Contracts;
  *
  * Key responsibilities of this interface:
  * - Provide the **net total**, which is the subtotal before taxes and discounts.
- * - Provide the **gross total**, which includes all taxes and discounts applied.
  * - Provide the **discount total**, detailing the cumulative value of all discounts.
  * - Provide the **tax total**, showing the sum of all applicable taxes.
  * - Provide the **total**, representing the final payable amount after calculations.
@@ -32,8 +31,6 @@ interface Totalizable
     public function total(): float;
 
     public function netTotal(): float;
-
-    public function grossTotal(): float;
 
     public function totalDiscounts(): float;
 
