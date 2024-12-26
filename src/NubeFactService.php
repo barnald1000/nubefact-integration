@@ -6,10 +6,10 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact;
+namespace Savia\NubeFactIntegration;
 
 use Psr\Http\Message\ResponseInterface;
-use Savia\NubeFact\Keywords\Operation;
+use Savia\NubeFactIntegration\Keywords\Operation;
 
 interface NubeFactService
 {

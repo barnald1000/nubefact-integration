@@ -6,7 +6,7 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact\Keywords;
+namespace Savia\NubeFactIntegration\Keywords;
 
 enum Currency: int
 {

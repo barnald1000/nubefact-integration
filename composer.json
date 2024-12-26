@@ -10,12 +10,12 @@
   ],
   "autoload": {
     "psr-4": {
-      "Savia\\NubeFact\\": "src/"
+      "Savia\\NubeFactIntegration\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Savia\\NubeFact\\Tests\\": "tests/"
+      "Savia\\NubeFactIntegration\\Tests\\": "tests/"
     }
   },
   "require": {

@@ -6,11 +6,11 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact\Actions\Payments;
+namespace Savia\NubeFactIntegration\Actions\Payments;
 
-use Savia\NubeFact\Contracts\TransactionEntryItem;
-use Savia\NubeFact\FinancialCalculator;
-use Savia\NubeFact\Schema;
+use Savia\NubeFactIntegration\Contracts\TransactionEntryItem;
+use Savia\NubeFactIntegration\FinancialCalculator;
+use Savia\NubeFactIntegration\Schema;
 
 final class LineSchema extends Schema
 {

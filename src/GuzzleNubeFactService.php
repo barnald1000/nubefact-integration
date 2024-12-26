@@ -6,12 +6,12 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact;
+namespace Savia\NubeFactIntegration;
 
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\ResponseInterface;
-use Savia\NubeFact\Keywords\Operation;
+use Savia\NubeFactIntegration\Keywords\Operation;
 
 use function array_merge;
 use function sprintf;

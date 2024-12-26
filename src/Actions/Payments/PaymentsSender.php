@@ -6,16 +6,16 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact\Actions\Payments;
+namespace Savia\NubeFactIntegration\Actions\Payments;
 
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
-use Savia\NubeFact\Contracts\FinancialTransaction;
-use Savia\NubeFact\Contracts\TransactionEntry;
-use Savia\NubeFact\Contracts\TransactionEntryItem;
-use Savia\NubeFact\Keywords\Operation;
-use Savia\NubeFact\NubeFactService;
-use Savia\NubeFact\Sender;
+use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
+use Savia\NubeFactIntegration\Contracts\TransactionEntry;
+use Savia\NubeFactIntegration\Contracts\TransactionEntryItem;
+use Savia\NubeFactIntegration\Keywords\Operation;
+use Savia\NubeFactIntegration\NubeFactService;
+use Savia\NubeFactIntegration\Sender;
 
 use function array_merge;
 use function sprintf;

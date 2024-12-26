@@ -6,12 +6,12 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact\Contracts;
+namespace Savia\NubeFactIntegration\Contracts;
 
 use DateTimeInterface;
-use Savia\NubeFact\Items;
-use Savia\NubeFact\Keywords\Currency;
-use Savia\NubeFact\Keywords\DocumentType;
+use Savia\NubeFactIntegration\Items;
+use Savia\NubeFactIntegration\Keywords\Currency;
+use Savia\NubeFactIntegration\Keywords\DocumentType;
 
 /**
  * Interface FinancialTransaction

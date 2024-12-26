@@ -6,10 +6,10 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact;
+namespace Savia\NubeFactIntegration;
 
-use Savia\NubeFact\Responses\Error;
-use Savia\NubeFact\Responses\Success;
+use Savia\NubeFactIntegration\Responses\Error;
+use Savia\NubeFactIntegration\Responses\Success;
 
 interface LoggerRepository
 {

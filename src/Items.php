@@ -6,9 +6,9 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact;
+namespace Savia\NubeFactIntegration;
 
-use Savia\NubeFact\Contracts\TransactionEntryItem;
+use Savia\NubeFactIntegration\Contracts\TransactionEntryItem;
 use Vaened\Support\Types\SecureList;
 
 final class Items extends SecureList

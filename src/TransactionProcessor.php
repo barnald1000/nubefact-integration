@@ -6,14 +6,14 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact;
+namespace Savia\NubeFactIntegration;
 
 use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
-use Savia\NubeFact\Contracts\FinancialTransaction;
-use Savia\NubeFact\Responses\Error;
-use Savia\NubeFact\Responses\Response;
-use Savia\NubeFact\Responses\Success;
+use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
+use Savia\NubeFactIntegration\Responses\Error;
+use Savia\NubeFactIntegration\Responses\Response;
+use Savia\NubeFactIntegration\Responses\Success;
 use Vaened\Support\Types\ArrayList;
 
 use function json_decode;

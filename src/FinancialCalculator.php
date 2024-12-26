@@ -6,10 +6,10 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact;
+namespace Savia\NubeFactIntegration;
 
-use Savia\NubeFact\Contracts\Totalizable;
-use Savia\NubeFact\Keywords\IGVType;
+use Savia\NubeFactIntegration\Contracts\Totalizable;
+use Savia\NubeFactIntegration\Keywords\IGVType;
 
 final readonly class FinancialCalculator
 {

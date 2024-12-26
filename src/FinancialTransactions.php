@@ -6,9 +6,9 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact;
+namespace Savia\NubeFactIntegration;
 
-use Savia\NubeFact\Contracts\FinancialTransaction;
+use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
 use Vaened\Support\Types\SecureList;
 
 final class FinancialTransactions extends SecureList

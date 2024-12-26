@@ -6,9 +6,9 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact;
+namespace Savia\NubeFactIntegration;
 
-use Savia\NubeFact\Errors\InvalidPaymentStructure;
+use Savia\NubeFactIntegration\Errors\InvalidPaymentStructure;
 
 use function Lambdish\Phunctional\each;
 use function Lambdish\Phunctional\map;

@@ -6,10 +6,10 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact;
+namespace Savia\NubeFactIntegration;
 
 use Psr\Http\Message\ResponseInterface;
-use Savia\NubeFact\Contracts\FinancialTransaction;
+use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
 
 interface Sender
 {

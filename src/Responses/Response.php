@@ -6,9 +6,9 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact\Responses;
+namespace Savia\NubeFactIntegration\Responses;
 
-use Savia\NubeFact\Contracts\FinancialTransaction;
+use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
 
 abstract readonly class Response
 {

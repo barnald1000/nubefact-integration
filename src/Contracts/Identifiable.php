@@ -6,9 +6,9 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact\Contracts;
+namespace Savia\NubeFactIntegration\Contracts;
 
-use Savia\NubeFact\Keywords\IdentificationType;
+use Savia\NubeFactIntegration\Keywords\IdentificationType;
 
 interface Identifiable
 {

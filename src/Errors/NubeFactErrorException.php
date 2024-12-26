@@ -6,7 +6,7 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact\Errors;
+namespace Savia\NubeFactIntegration\Errors;
 
 use RuntimeException;
 

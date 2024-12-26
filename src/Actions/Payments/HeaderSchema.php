@@ -6,11 +6,11 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFact\Actions\Payments;
+namespace Savia\NubeFactIntegration\Actions\Payments;
 
-use Savia\NubeFact\Contracts\TransactionEntry;
-use Savia\NubeFact\Schema;
-use Savia\NubeFact\TransactionSummarizer;
+use Savia\NubeFactIntegration\Contracts\TransactionEntry;
+use Savia\NubeFactIntegration\Schema;
+use Savia\NubeFactIntegration\TransactionSummarizer;
 
 final class HeaderSchema extends Schema
 {
