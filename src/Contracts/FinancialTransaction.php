@@ -24,7 +24,7 @@ interface FinancialTransaction extends Totalizable
 {
     public function number(): int;
 
-    public function serie(): string;
+    public function serial(): string;
 
     public function type(): DocumentType;
 
