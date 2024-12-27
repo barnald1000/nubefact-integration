@@ -26,9 +26,9 @@ final readonly class Error extends Response
         return false;
     }
 
-    public function code(): string
+    public function code(): int
     {
-        return $this->get('codigo');
+        return (int)$this->get('codigo');
     }
 
     public function messages(): string|array
