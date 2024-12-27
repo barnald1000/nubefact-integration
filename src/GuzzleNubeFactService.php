@@ -14,10 +14,13 @@ use Psr\Http\Message\ResponseInterface;
 use Savia\NubeFactIntegration\Keywords\Operation;
 
 use function array_merge;
+use function json_encode;
 use function sprintf;
 
 final class GuzzleNubeFactService implements NubeFactService
 {
+    private const RootURI = '';
+
     private static GuzzleClient $client;
 
     public function __construct(string $baseURI, string $apiToken)
@@ -27,7 +30,10 @@ final class GuzzleNubeFactService implements NubeFactService
 
     public function call(Operation $operation, array $data): ResponseInterface
     {
-        return $this->client()->post('', self::request($operation, with: $data));
+        return $this->client()->post(
+            self::RootURI,
+            ['body' => json_encode(self::request($operation, with: $data))]
+        );
     }
 
     private static function client(): GuzzleClient
@@ -41,8 +47,8 @@ final class GuzzleNubeFactService implements NubeFactService
             'base_uri' => $baseURI,
             'handler'  => HandlerStack::create(),
             'headers'  => [
-                'Content-Type'  => 'application/json',
-                'Accept'        => 'application/json',
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
                 'Authorization' => sprintf("Token token=%s", $apiToken),
             ],
         ]);
