@@ -47,7 +47,7 @@ final readonly class Success extends Response
         return $this->get('enlace_del_xml');
     }
 
-    public function content(): string
+    public function content(): array
     {
         return $this->get('invoice');
     }
