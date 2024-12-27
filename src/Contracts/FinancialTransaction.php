@@ -22,6 +22,8 @@ use Savia\NubeFactIntegration\Keywords\DocumentType;
  */
 interface FinancialTransaction extends Totalizable
 {
+    public function id(): string;
+
     public function number(): int;
 
     public function serial(): string;
