@@ -10,6 +10,9 @@ namespace Savia\NubeFactIntegration\Responses;
 
 use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
 
+use function is_array;
+use function json_encode;
+
 final readonly class Success extends Response
 {
     public function __construct(FinancialTransaction $transaction, array $response)
@@ -47,7 +50,7 @@ final readonly class Success extends Response
         return $this->get('enlace_del_xml');
     }
 
-    public function content(): array
+    public function content(): string|array
     {
         return $this->get('invoice');
     }
@@ -59,6 +62,8 @@ final readonly class Success extends Response
 
     public function toArray(): array
     {
+        $content = $this->content();
+
         return array_merge(parent::toArray(), [
             'key'          => $this->key(),
             'qr_code'      => $this->qrCode(),
@@ -66,7 +71,7 @@ final readonly class Success extends Response
             'bar_code'     => $this->barCode(),
             'pdf_document' => $this->pdfDocument(),
             'xml_document' => $this->xmlDocument(),
-            'document'     => $this->content(),
+            'document'     => is_array($content) ? json_encode($content) : $content,
         ]);
     }
 }
