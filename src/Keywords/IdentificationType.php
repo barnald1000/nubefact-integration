@@ -14,5 +14,7 @@ enum IdentificationType: int
 
     case Ruc = 6;
 
+    case CE = 4;
+
     case Passport = 7;
 }
