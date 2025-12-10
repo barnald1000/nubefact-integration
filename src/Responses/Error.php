@@ -31,7 +31,7 @@ final readonly class Error extends Response
         return (int)$this->get('codigo');
     }
 
-    public function messages(): string|array
+    public function messages(): string|array|null
     {
         return $this->get('errors');
     }
