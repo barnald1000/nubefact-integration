@@ -14,10 +14,9 @@ final readonly class Error extends Response
 {
     public function __construct(
         FinancialTransaction $transaction,
-        private string       $message,
-        ?array               $response
-    )
-    {
+        private string $message,
+        ?array $response
+    ) {
         parent::__construct($transaction, $response);
     }
 
@@ -28,7 +27,7 @@ final readonly class Error extends Response
 
     public function code(): int
     {
-        return (int)$this->get('codigo');
+        return (int) $this->get('codigo');
     }
 
     public function messages(): string|array|null

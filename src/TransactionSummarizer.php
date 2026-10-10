@@ -12,9 +12,7 @@ use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
 
 final readonly class TransactionSummarizer
 {
-    public function __construct(private FinancialTransaction $transaction)
-    {
-    }
+    public function __construct(private FinancialTransaction $transaction) {}
 
     /**
      * Calculates the "Total Gravado" (Taxable Total) of the entity.

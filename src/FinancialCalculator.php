@@ -15,9 +15,7 @@ final readonly class FinancialCalculator
 {
     public function __construct(
         private Totalizable $target
-    )
-    {
-    }
+    ) {}
 
     public function generateIVGType(): IGVType
     {

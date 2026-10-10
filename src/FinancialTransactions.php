@@ -13,7 +13,7 @@ use Vaened\Support\Types\SecureList;
 
 final class FinancialTransactions extends SecureList
 {
-    static public function type(): string
+    public static function type(): string
     {
         return FinancialTransaction::class;
     }

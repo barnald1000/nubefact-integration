@@ -10,6 +10,4 @@ namespace Savia\NubeFactIntegration\Tests;
 
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
 
-abstract class TestCase extends PhpUnitTestCase
-{
-}
+abstract class TestCase extends PhpUnitTestCase {}

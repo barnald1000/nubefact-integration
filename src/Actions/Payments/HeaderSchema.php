@@ -18,29 +18,28 @@ final class HeaderSchema extends Schema
 
     public function __construct(
         private readonly TransactionEntry $entry
-    )
-    {
+    ) {
         $this->summarizer = new TransactionSummarizer($entry);
     }
 
     protected function structure(): array
     {
         return [
-            "tipo_de_comprobante"         => $this->entry->type()->value,
-            "serie"                       => $this->entry->serial(),
-            "numero"                      => $this->entry->number(),
-            "sunat_transaction"           => 1,
-            "cliente_tipo_de_documento"   => $this->entry->customer()->identificationType()->value,
-            "cliente_numero_de_documento" => $this->entry->customer()->identificationNumber(),
-            "cliente_denominacion"        => $this->entry->customer()->denomination(),
-            "cliente_direccion"           => $this->entry->customer()->address(),
-            "cliente_email"               => $this->entry->customer()->email(),
-            "fecha_de_emision"            => $this->entry->issueDate()->format('Y-m-d'),
-            "moneda"                      => $this->entry->currency()->value,
-            "porcentaje_de_igv"           => $this->entry->taxPercentage(),
-            "total_gravada"               => $this->summarizer->taxableTotal(),
-            "total_igv"                   => $this->summarizer->totalTaxes(),
-            "total"                       => $this->summarizer->total(),
+            "tipo_de_comprobante"               => $this->entry->type()->value,
+            "serie"                             => $this->entry->serial(),
+            "numero"                            => $this->entry->number(),
+            "sunat_transaction"                 => 1,
+            "cliente_tipo_de_documento"         => $this->entry->customer()->identificationType()->value,
+            "cliente_numero_de_documento"       => $this->entry->customer()->identificationNumber(),
+            "cliente_denominacion"              => $this->entry->customer()->denomination(),
+            "cliente_direccion"                 => $this->entry->customer()->address(),
+            "cliente_email"                     => $this->entry->customer()->email(),
+            "fecha_de_emision"                  => $this->entry->issueDate()->format('Y-m-d'),
+            "moneda"                            => $this->entry->currency()->value,
+            "porcentaje_de_igv"                 => $this->entry->taxPercentage(),
+            "total_gravada"                     => $this->summarizer->taxableTotal(),
+            "total_igv"                         => $this->summarizer->totalTaxes(),
+            "total"                             => $this->summarizer->total(),
 
             "enviar_automaticamente_a_la_sunat" => true,
             "enviar_automaticamente_al_cliente" => true,

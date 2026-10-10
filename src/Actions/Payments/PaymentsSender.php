@@ -22,9 +22,7 @@ use function sprintf;
 
 final readonly class PaymentsSender implements Sender
 {
-    public function __construct(private NubeFactService $service)
-    {
-    }
+    public function __construct(private NubeFactService $service) {}
 
     public function send(FinancialTransaction $transaction): ResponseInterface
     {

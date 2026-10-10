@@ -21,11 +21,9 @@ use function json_decode;
 final readonly class TransactionProcessor
 {
     public function __construct(
-        private Sender            $sender,
+        private Sender $sender,
         private ?LoggerRepository $logger = null
-    )
-    {
-    }
+    ) {}
 
     public function process(FinancialTransactions $transactions): ArrayList
     {
@@ -37,6 +35,7 @@ final readonly class TransactionProcessor
         return function (FinancialTransaction $transaction): Response {
             try {
                 $response = $this->sender->send($transaction);
+
                 return $this->buildSuccessResponseFor($transaction, $response);
             } catch (RequestException $exception) {
                 return $this->buildErrorResponseFor($transaction, $exception, $exception->getResponse());
@@ -46,9 +45,8 @@ final readonly class TransactionProcessor
 
     private function buildSuccessResponseFor(
         FinancialTransaction $transaction,
-        ResponseInterface    $response
-    ): Success
-    {
+        ResponseInterface $response
+    ): Success {
         $response = new Success($transaction, json_decode($response->getBody()->getContents(), true));
         $this->logger?->log($response);
 
@@ -57,10 +55,9 @@ final readonly class TransactionProcessor
 
     private function buildErrorResponseFor(
         FinancialTransaction $transaction,
-        RequestException     $exception,
-        ResponseInterface    $response
-    ): Error
-    {
+        RequestException $exception,
+        ResponseInterface $response
+    ): Error {
         $response = new Error($transaction, $exception->getMessage(), json_decode($response->getBody()->getContents(), true));
         $this->logger?->log($response);
 

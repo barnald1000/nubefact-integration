@@ -18,8 +18,7 @@ final class LineSchema extends Schema
 
     public function __construct(
         private readonly TransactionEntryItem $item
-    )
-    {
+    ) {
         $this->calculator = new FinancialCalculator($item);
     }
 

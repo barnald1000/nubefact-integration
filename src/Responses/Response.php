@@ -12,9 +12,7 @@ use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
 
 abstract readonly class Response
 {
-    public function __construct(private FinancialTransaction $transaction, private ?array $response)
-    {
-    }
+    public function __construct(private FinancialTransaction $transaction, private ?array $response) {}
 
     abstract public function isAccept(): bool;
 

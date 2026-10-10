@@ -8,6 +8,4 @@ declare(strict_types=1);
 
 namespace Savia\NubeFactIntegration\Contracts;
 
-interface TaxEvaluator
-{
-}
+interface TaxEvaluator {}

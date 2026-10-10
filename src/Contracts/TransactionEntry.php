@@ -15,6 +15,4 @@ namespace Savia\NubeFactIntegration\Contracts;
  * This abstraction provides a consistent structure for recording financial exchanges,
  * ensuring clarity and uniformity across different transaction types.
  */
-interface TransactionEntry extends FinancialTransaction
-{
-}
+interface TransactionEntry extends FinancialTransaction {}

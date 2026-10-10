@@ -10,6 +10,4 @@ namespace Savia\NubeFactIntegration\Errors;
 
 use RuntimeException;
 
-abstract class NubeFactErrorException extends RuntimeException
-{
-}
+abstract class NubeFactErrorException extends RuntimeException {}

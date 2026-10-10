@@ -8,6 +8,4 @@ declare(strict_types=1);
 
 namespace Savia\NubeFactIntegration\Errors;
 
-final class InvalidPaymentStructure extends NubeFactErrorException
-{
-}
+final class InvalidPaymentStructure extends NubeFactErrorException {}
