@@ -48,7 +48,7 @@ final readonly class IGVTreatment
             self::TAXED_EXCLUDED => self::taxedExcluded(),
             self::EXONERATED     => self::exonerated(),
             self::UNAFFECTED     => self::unaffected(),
-            default              => throw new InvalidLine("Tratamiento de IGV desconocido: {$key}."),
+            default              => throw new InvalidLine("Tratamiento de IGV desconocido: $key."),
         };
     }
 
