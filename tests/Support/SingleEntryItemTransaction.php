@@ -11,9 +11,9 @@ namespace Savia\NubeFactIntegration\Tests\Support;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
+use Savia\NubeFactIntegration\Contracts\Customer;
 use Savia\NubeFactIntegration\Contracts\TransactionEntry;
 use Savia\NubeFactIntegration\Contracts\TransactionEntryItem;
-use Savia\NubeFactIntegration\Customer;
 use Savia\NubeFactIntegration\Items;
 use Savia\NubeFactIntegration\Keywords\Currency;
 use Savia\NubeFactIntegration\Keywords\DocumentType;
@@ -68,12 +68,12 @@ final readonly class SingleEntryItemTransaction implements TransactionEntry, Tra
             ? $this->billingInfo['alumno_correo']
             : $this->billingInfo['sac_mail_facturacion'];
 
-        return Customer::of(
-            identificationType  : $isInvoiceRequired ? IdentificationType::Ruc : IdentificationType::Dni,
-            identificationNumber: $isInvoiceRequired ? (string) $this->billingInfo['sac_ruc'] : $this->clientDocumentNumber(),
+        return new GenericClient(
             denomination        : $isInvoiceRequired ? $this->billingInfo['sac_razon_social'] : $this->clientDemonstration(),
-            address             : $address,
             email               : $email,
+            address             : $address,
+            identificationNumber: $isInvoiceRequired ? (string) $this->billingInfo['sac_ruc'] : $this->clientDocumentNumber(),
+            identificationType  : $isInvoiceRequired ? IdentificationType::Ruc : IdentificationType::Dni,
         );
     }
 
