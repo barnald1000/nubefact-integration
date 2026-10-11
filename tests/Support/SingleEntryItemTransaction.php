@@ -12,19 +12,23 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use Savia\NubeFactIntegration\Contracts\Customer;
-use Savia\NubeFactIntegration\Contracts\TransactionEntry;
-use Savia\NubeFactIntegration\Contracts\TransactionEntryItem;
-use Savia\NubeFactIntegration\Items;
+use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
 use Savia\NubeFactIntegration\Keywords\Currency;
 use Savia\NubeFactIntegration\Keywords\DocumentType;
 use Savia\NubeFactIntegration\Keywords\IdentificationType;
+use Savia\NubeFactIntegration\Keywords\IgvRate;
+use Savia\NubeFactIntegration\Lines\Amount;
+use Savia\NubeFactIntegration\Lines\IGVTreatment;
+use Savia\NubeFactIntegration\Lines\Item;
+use Savia\NubeFactIntegration\Lines\Line;
+use Savia\NubeFactIntegration\Lines\Lines;
+use Savia\NubeFactIntegration\Lines\Quantity;
+use Savia\NubeFactIntegration\Lines\Unit;
 
 use function sprintf;
 
-final readonly class SingleEntryItemTransaction implements TransactionEntry, TransactionEntryItem
+final readonly class SingleEntryItemTransaction implements FinancialTransaction
 {
-    private const IGV_PERCENTAGE = 18.0;
-
     public function __construct(
         private array $billingInfo,
         private int $serialNumber,
@@ -51,9 +55,9 @@ final readonly class SingleEntryItemTransaction implements TransactionEntry, Tra
         return $this->isInvoiceRequired() ? DocumentType::Invoice : DocumentType::Receipt;
     }
 
-    public function taxPercentage(): float
+    public function igvRate(): IgvRate
     {
-        return self::IGV_PERCENTAGE;
+        return IgvRate::standard();
     }
 
     public function customer(): Customer
@@ -89,54 +93,34 @@ final readonly class SingleEntryItemTransaction implements TransactionEntry, Tra
         return Currency::PEN;
     }
 
-    public function items(): Items
+    public function lines(): Lines
     {
-        return new Items([$this]);
+        return new Lines([
+            Line::onerous(
+                item     : Item::of($this->code(), $this->description(), Unit::service()),
+                quantity : Quantity::of($this->quantity()),
+                unitPrice: Amount::of(sprintf('%.2f', $this->unitaryPrice())),
+                tax      : IGVTreatment::taxedIncluded(),
+            ),
+        ]);
     }
 
-    public function total(): float
-    {
-        return (float) $this->billingInfo['sac_monto'];
-    }
-
-    public function netTotal(): float
-    {
-        $igvRate = self::IGV_PERCENTAGE / 100;
-
-        return $this->total() / (1 + $igvRate);
-    }
-
-    public function totalDiscounts(): float
-    {
-        return 0;
-    }
-
-    public function totalTaxes(): float
-    {
-        return $this->total() - $this->netTotal();
-    }
-
-    public function code(): ?string
+    private function code(): string
     {
         return $this->id();
     }
 
-    public function description(): string
+    private function description(): string
     {
         return sprintf('Ciclo: %s Modalidad: %s', $this->billingInfo['ciclo_nombre'], $this->billingInfo['sac_modalidad']);
     }
 
-    public function quantity(): int
+    private function quantity(): int
     {
         return 1;
     }
 
-    public function measureCode(): string
-    {
-        return 'ZZ';
-    }
-
-    public function unitaryPrice(): float
+    private function unitaryPrice(): float
     {
         return $this->billingInfo['unitary_price'];
     }
@@ -150,9 +134,9 @@ final readonly class SingleEntryItemTransaction implements TransactionEntry, Tra
     {
         if ($this->clientHasAGuardian()) {
             $names = [
-                $thid->billingInfo['alumno_apellido_apoderado'] ?? '',
-                $thid->billingInfo['alumno_apellido_m_apoderado'] ?? '',
-                $thid->billingInfo['alumno_nombre_apoderado'] ?? '',
+                $this->billingInfo['alumno_apellido_apoderado'] ?? '',
+                $this->billingInfo['alumno_apellido_m_apoderado'] ?? '',
+                $this->billingInfo['alumno_nombre_apoderado'] ?? '',
             ];
         } else {
             $names = [

@@ -4,38 +4,27 @@ declare(strict_types=1);
 
 namespace Savia\NubeFactIntegration\Lines;
 
-use Brick\Math\BigDecimal;
-
-use function rtrim;
-
+/**
+ * Quantity
+ *
+ * The number of units sold in a line. It is a whole number: the business sells monthly services and countable products,
+ * and a fractional quantity is the only case where a line total could differ by a cent from its subtotal plus IGV.
+ */
 final readonly class Quantity
 {
-    private function __construct(private BigDecimal $value) {}
+    private function __construct(private int $value) {}
 
-    public static function of(int|string $value): self
+    public static function of(int $value): self
     {
-        $decimal = BigDecimal::of($value);
-
-        if ($decimal->isLessThanOrEqualTo(0)) {
+        if ($value <= 0) {
             throw new InvalidLine('La cantidad debe ser mayor que cero.');
         }
 
-        if ($decimal->getScale() > 10) {
-            throw new InvalidLine('La cantidad no puede exceder 10 decimales según Nubefact.');
-        }
-
-        return new self($decimal);
+        return new self($value);
     }
 
-    public function value(): BigDecimal
+    public function value(): int
     {
         return $this->value;
-    }
-
-    public function format(): string
-    {
-        $value = (string) $this->value;
-
-        return str_contains($value, '.') ? rtrim(rtrim($value, '0'), '.') : $value;
     }
 }

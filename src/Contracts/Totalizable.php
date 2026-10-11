@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 namespace Savia\NubeFactIntegration\Contracts;
 
+use Brick\Math\BigDecimal;
+
 /**
  * Totalizable
  *
@@ -15,24 +17,19 @@ namespace Savia\NubeFactIntegration\Contracts;
  * This interface is designed for use in financial contexts where detailed breakdowns
  * of totals are required, such as invoices, receipts, or other transaction records.
  *
+ * It only exposes the totals that a line and a document share. The net amount is left out on purpose:
+ * a line has one subtotal, while a document splits it into taxed, exonerated and unaffected bases.
+ *
  * Key responsibilities of this interface:
- * - Provide the **net total**, which is the subtotal before taxes and discounts.
  * - Provide the **discount total**, detailing the cumulative value of all discounts.
  * - Provide the **tax total**, showing the sum of all applicable taxes.
  * - Provide the **total**, representing the final payable amount after calculations.
- *
- * Example Use Case:
- * An invoice can implement `Totalizable` to encapsulate its financial details.
- * This ensures that all relevant calculations like taxes, discounts, and final payable
- * amounts are standardized and consistently accessible.
  */
 interface Totalizable
 {
-    public function total(): float;
+    public function total(): BigDecimal;
 
-    public function netTotal(): float;
+    public function totalDiscounts(): BigDecimal;
 
-    public function totalDiscounts(): float;
-
-    public function totalTaxes(): float;
+    public function totalTaxes(): BigDecimal;
 }

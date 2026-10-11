@@ -11,15 +11,10 @@ namespace Savia\NubeFactIntegration;
 use Savia\NubeFactIntegration\Errors\InvalidPaymentStructure;
 
 use function Lambdish\Phunctional\each;
-use function Lambdish\Phunctional\map;
 
 abstract class Schema
 {
-    private const PRECISION = 2;
-
     abstract protected static function required(): array;
-
-    abstract protected static function valuesToRound(): array;
 
     abstract protected function structure(): array;
 
@@ -28,7 +23,7 @@ abstract class Schema
         $structure = $this->structure();
         $this->validate($structure);
 
-        return map(self::roundIfNeeded(), $structure);
+        return $structure;
     }
 
     protected function validate(array $structure): void
@@ -38,16 +33,5 @@ abstract class Schema
                 throw new InvalidPaymentStructure("The required key `$required` is missing from the payment structure."),
             static::required()
         );
-    }
-
-    private static function roundIfNeeded(): callable
-    {
-        return static function (mixed $value, string $key): mixed {
-            if (in_array($key, static::valuesToRound())) {
-                return round($value, self::PRECISION);
-            }
-
-            return $value;
-        };
     }
 }

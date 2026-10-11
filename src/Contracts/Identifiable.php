@@ -10,24 +10,18 @@ namespace Savia\NubeFactIntegration\Contracts;
 
 use Savia\NubeFactIntegration\Keywords\IdentificationType;
 
+/**
+ * Identifiable
+ *
+ * Represents anyone who can be identified by an official identity document.
+ *
+ * Key responsibilities of this interface:
+ * - Provide the **identification type**, such as DNI, RUC, foreigner card or passport.
+ * - Provide the **identification number**, the unique identifier issued for that document type.
+ */
 interface Identifiable
 {
-    /**
-     * Returns the identification number.
-     *
-     * This method should provide the unique identifier (such as a DNI, passport number, etc.)
-     * associated with the implementing class.
-     *
-     * @return string The identification number.
-     */
     public function identificationNumber(): string;
 
-    /**
-     * Returns the type of identification.
-     *
-     * This method defines the type of identification, such as "Passport", "Dni", "Ruc", etc.
-     *
-     * @return IdentificationType The type of identification.
-     */
     public function identificationType(): IdentificationType;
 }

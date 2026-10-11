@@ -8,39 +8,43 @@ declare(strict_types=1);
 
 namespace Savia\NubeFactIntegration\Actions\Payments;
 
-use Savia\NubeFactIntegration\Contracts\TransactionEntry;
+use Savia\NubeFactIntegration\DecimalFormat;
+use Savia\NubeFactIntegration\Projection\DocumentProjection;
 use Savia\NubeFactIntegration\Schema;
-use Savia\NubeFactIntegration\TransactionSummarizer;
 
+/**
+ * Translates a calculated document into the Nubefact header. Identity data comes from the transaction; every amount
+ * comes from the projection. It does not calculate anything.
+ */
 final class HeaderSchema extends Schema
 {
-    private readonly TransactionSummarizer $summarizer;
-
     public function __construct(
-        private readonly TransactionEntry $entry
-    ) {
-        $this->summarizer = new TransactionSummarizer($entry);
-    }
+        private readonly DocumentProjection $document
+    ) {}
 
     protected function structure(): array
     {
-        return [
-            "tipo_de_comprobante"               => $this->entry->type()->value,
-            "serie"                             => $this->entry->serial(),
-            "numero"                            => $this->entry->number(),
-            "sunat_transaction"                 => 1,
-            "cliente_tipo_de_documento"         => $this->entry->customer()->identificationType()->value,
-            "cliente_numero_de_documento"       => $this->entry->customer()->identificationNumber(),
-            "cliente_denominacion"              => $this->entry->customer()->denomination(),
-            "cliente_direccion"                 => $this->entry->customer()->address(),
-            "cliente_email"                     => $this->entry->customer()->email(),
-            "fecha_de_emision"                  => $this->entry->issueDate()->format('Y-m-d'),
-            "moneda"                            => $this->entry->currency()->value,
-            "porcentaje_de_igv"                 => $this->entry->taxPercentage(),
-            "total_gravada"                     => $this->summarizer->taxableTotal(),
-            "total_igv"                         => $this->summarizer->totalTaxes(),
-            "total"                             => $this->summarizer->total(),
+        $entry = $this->document->transaction();
 
+        return [
+            "tipo_de_comprobante"               => $entry->type()->value,
+            "serie"                             => $entry->serial(),
+            "numero"                            => $entry->number(),
+            "sunat_transaction"                 => 1,
+            "cliente_tipo_de_documento"         => $entry->customer()->identificationType()->value,
+            "cliente_numero_de_documento"       => $entry->customer()->identificationNumber(),
+            "cliente_denominacion"              => $entry->customer()->denomination(),
+            "cliente_direccion"                 => $entry->customer()->address(),
+            "cliente_email"                     => $entry->customer()->email(),
+            "fecha_de_emision"                  => $entry->issueDate()->format('Y-m-d'),
+            "moneda"                            => $entry->currency()->value,
+            "porcentaje_de_igv"                 => DecimalFormat::number($this->document->igvRate()->percentage(), 2),
+            "total_descuento"                   => DecimalFormat::number($this->document->totalDiscounts(), 2),
+            "total_gravada"                     => DecimalFormat::number($this->document->totalTaxed(), 2),
+            "total_exonerada"                   => DecimalFormat::number($this->document->totalExonerated(), 2),
+            "total_inafecta"                    => DecimalFormat::number($this->document->totalUnaffected(), 2),
+            "total_igv"                         => DecimalFormat::number($this->document->totalTaxes(), 2),
+            "total"                             => DecimalFormat::number($this->document->total(), 2),
             "enviar_automaticamente_a_la_sunat" => true,
             "enviar_automaticamente_al_cliente" => true,
         ];
@@ -61,16 +65,10 @@ final class HeaderSchema extends Schema
             "fecha_de_emision",
             "moneda",
             "porcentaje_de_igv",
+            "total_descuento",
             "total_gravada",
-            "total_igv",
-            "total",
-        ];
-    }
-
-    protected static function valuesToRound(): array
-    {
-        return [
-            "total_gravada",
+            "total_exonerada",
+            "total_inafecta",
             "total_igv",
             "total",
         ];

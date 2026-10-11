@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Savia\NubeFactIntegration\Lines\Projection;
+namespace Savia\NubeFactIntegration\Projection;
 
 use Brick\Math\BigDecimal;
 use Brick\Math\BigRational;
 use Brick\Math\RoundingMode;
-use Savia\NubeFactIntegration\DecimalFormat;
+use Savia\NubeFactIntegration\Contracts\Totalizable;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Keywords\IGVType;
 use Savia\NubeFactIntegration\Lines\Item;
@@ -15,17 +15,28 @@ use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Quantity;
 
 /**
- * A line seen through Nubefact's schema. It can only be created by calculating it from a Line, so its figures cannot
- * contradict each other. Calculation is exact; each 2-decimal figure is rounded once.
+ * Line projection
+ *
+ * The calculated figures of a line. It can only be created by calculating it from a Line, so its figures cannot
+ * contradict each other. Calculation is exact and each 2-decimal figure is rounded once.
+ *
+ * Amounts that carry IGV are divided by the IGV factor to bring them before IGV, and only taxed lines add IGV on top
+ * of the subtotal. With IGV included, the total is exactly what was charged; otherwise it is the rounded subtotal
+ * plus the rounded IGV. The unit value (before IGV) and the unit price (with IGV, before the discount) keep up to
+ * 10 decimals, as Nubefact allows.
+ *
+ * @example taxed with IGV included, unit price 200.00 and discount 100.00 at 18 %:
+ *
+ *     unit value 169.4915254237 · unit price 200.00 · discount 84.75 · subtotal 84.75 · IGV 15.25 · total 100.00
  */
-final readonly class LineProjection
+final readonly class LineProjection implements Totalizable
 {
     private function __construct(
         private Item $item,
         private Quantity $quantity,
         private BigDecimal $unitValue,
         private BigDecimal $unitPrice,
-        private ?BigDecimal $discount,
+        private BigDecimal $discount,
         private BigDecimal $subtotal,
         private IGVType $igvType,
         private BigDecimal $tax,
@@ -39,9 +50,7 @@ final readonly class LineProjection
         $price     = $line->unitPrice()->value();
         $discount  = $line->discount()?->value() ?? BigDecimal::zero();
 
-        // Amounts that carry IGV are divided by the IGV factor to get them before IGV.
         $base = $treatment->includesIgv() ? $igvRate->factor() : BigDecimal::one();
-        // Only taxed lines add IGV on top of the subtotal.
         $rate = $treatment->isTaxed() ? $igvRate->decimal() : BigDecimal::zero();
 
         $unitValue         = BigRational::of($price)->dividedBy($base);
@@ -50,8 +59,7 @@ final readonly class LineProjection
 
         $roundedSubtotal = self::rounded($subtotal);
         $roundedTax      = self::rounded($subtotal->multipliedBy($rate));
-        // With IGV included the total is exactly what was charged; otherwise it is the subtotal plus the IGV.
-        $roundedTotal = $treatment->includesIgv()
+        $roundedTotal    = $treatment->includesIgv()
             ? self::rounded(BigRational::of($price)->multipliedBy($quantity)->minus($discount))
             : $roundedSubtotal->plus($roundedTax);
 
@@ -60,7 +68,7 @@ final readonly class LineProjection
             $line->quantity(),
             $unitValue->toScale(10, RoundingMode::HalfUp),
             $unitValue->multipliedBy(BigDecimal::one()->plus($rate))->toScale(10, RoundingMode::HalfUp),
-            $line->discount() === null ? null : self::rounded($discountBeforeIgv),
+            self::rounded($discountBeforeIgv),
             $roundedSubtotal,
             $treatment->toNubefact(),
             $roundedTax,
@@ -83,41 +91,34 @@ final readonly class LineProjection
         return $this->subtotal;
     }
 
-    public function tax(): BigDecimal
+    public function totalTaxes(): BigDecimal
     {
         return $this->tax;
     }
 
-    public function discount(): ?BigDecimal
+    public function totalDiscounts(): BigDecimal
     {
         return $this->discount;
     }
 
-    public function toNubefact(): array
+    public function item(): Item
     {
-        $value = [
-            'unidad_de_medida' => $this->item->unit()->code(),
-            'descripcion'      => $this->item->description(),
-            'cantidad'         => $this->quantity->format(),
-            'valor_unitario'   => DecimalFormat::trimmed($this->unitValue, 10),
-            'precio_unitario'  => DecimalFormat::trimmed($this->unitPrice, 10),
-            'subtotal'         => DecimalFormat::trimmed($this->subtotal, 2),
-            'tipo_de_igv'      => $this->igvType->value,
-            'igv'              => DecimalFormat::trimmed($this->tax, 2),
-            'total'            => DecimalFormat::trimmed($this->total, 2),
-        ];
+        return $this->item;
+    }
 
-        if ($this->item->code() !== null) {
-            $value['codigo'] = $this->item->code();
-        }
-        if ($this->discount !== null) {
-            $value['descuento'] = DecimalFormat::trimmed($this->discount, 2);
-        }
-        if ($this->item->sunatCode() !== null) {
-            $value['codigo_producto_sunat'] = $this->item->sunatCode();
-        }
+    public function quantity(): Quantity
+    {
+        return $this->quantity;
+    }
 
-        return $value;
+    public function unitValue(): BigDecimal
+    {
+        return $this->unitValue;
+    }
+
+    public function unitPrice(): BigDecimal
+    {
+        return $this->unitPrice;
     }
 
     private static function rounded(BigRational $value): BigDecimal
