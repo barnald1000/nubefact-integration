@@ -7,14 +7,12 @@ namespace Savia\NubeFactIntegration\Lines\Projection;
 use Brick\Math\BigDecimal;
 use Brick\Math\BigRational;
 use Brick\Math\RoundingMode;
+use Savia\NubeFactIntegration\DecimalFormat;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Keywords\IGVType;
 use Savia\NubeFactIntegration\Lines\Item;
 use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Quantity;
-
-use function rtrim;
-use function str_contains;
 
 /**
  * A line seen through Nubefact's schema. It can only be created by calculating it from a Line, so its figures cannot
@@ -70,6 +68,11 @@ final readonly class LineProjection
         );
     }
 
+    public function igvType(): IGVType
+    {
+        return $this->igvType;
+    }
+
     public function total(): BigDecimal
     {
         return $this->total;
@@ -96,19 +99,19 @@ final readonly class LineProjection
             'unidad_de_medida' => $this->item->unit()->code(),
             'descripcion'      => $this->item->description(),
             'cantidad'         => $this->quantity->format(),
-            'valor_unitario'   => self::trimmed($this->unitValue, 10),
-            'precio_unitario'  => self::trimmed($this->unitPrice, 10),
-            'subtotal'         => self::trimmed($this->subtotal, 2),
+            'valor_unitario'   => DecimalFormat::trimmed($this->unitValue, 10),
+            'precio_unitario'  => DecimalFormat::trimmed($this->unitPrice, 10),
+            'subtotal'         => DecimalFormat::trimmed($this->subtotal, 2),
             'tipo_de_igv'      => $this->igvType->value,
-            'igv'              => self::trimmed($this->tax, 2),
-            'total'            => self::trimmed($this->total, 2),
+            'igv'              => DecimalFormat::trimmed($this->tax, 2),
+            'total'            => DecimalFormat::trimmed($this->total, 2),
         ];
 
         if ($this->item->code() !== null) {
             $value['codigo'] = $this->item->code();
         }
         if ($this->discount !== null) {
-            $value['descuento'] = self::trimmed($this->discount, 2);
+            $value['descuento'] = DecimalFormat::trimmed($this->discount, 2);
         }
         if ($this->item->sunatCode() !== null) {
             $value['codigo_producto_sunat'] = $this->item->sunatCode();
@@ -120,12 +123,5 @@ final readonly class LineProjection
     private static function rounded(BigRational $value): BigDecimal
     {
         return $value->toScale(2, RoundingMode::HalfUp);
-    }
-
-    private static function trimmed(BigDecimal $value, int $scale): string
-    {
-        $text = (string) $value->toScale($scale, RoundingMode::HalfUp);
-
-        return str_contains($text, '.') ? rtrim(rtrim($text, '0'), '.') : $text;
     }
 }
