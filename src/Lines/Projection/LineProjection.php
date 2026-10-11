@@ -36,7 +36,38 @@ final readonly class LineProjection
 
     public static function of(Line $line, IgvRate $igvRate): self
     {
-        return $line->tax()->isTaxed() ? self::taxed($line, $igvRate) : self::untaxed($line);
+        $treatment = $line->tax();
+        $quantity  = $line->quantity()->value();
+        $price     = $line->unitPrice()->value();
+        $discount  = $line->discount()?->value() ?? BigDecimal::zero();
+
+        // Amounts that carry IGV are divided by the IGV factor to get them before IGV.
+        $base = $treatment->includesIgv() ? $igvRate->factor() : BigDecimal::one();
+        // Only taxed lines add IGV on top of the subtotal.
+        $rate = $treatment->isTaxed() ? $igvRate->decimal() : BigDecimal::zero();
+
+        $unitValue         = BigRational::of($price)->dividedBy($base);
+        $discountBeforeIgv = BigRational::of($discount)->dividedBy($base);
+        $subtotal          = $unitValue->multipliedBy($quantity)->minus($discountBeforeIgv);
+
+        $roundedSubtotal = self::rounded($subtotal);
+        $roundedTax      = self::rounded($subtotal->multipliedBy($rate));
+        // With IGV included the total is exactly what was charged; otherwise it is the subtotal plus the IGV.
+        $roundedTotal = $treatment->includesIgv()
+            ? self::rounded(BigRational::of($price)->multipliedBy($quantity)->minus($discount))
+            : $roundedSubtotal->plus($roundedTax);
+
+        return new self(
+            $line->item(),
+            $line->quantity(),
+            $unitValue->toScale(10, RoundingMode::HalfUp),
+            $unitValue->multipliedBy(BigDecimal::one()->plus($rate))->toScale(10, RoundingMode::HalfUp),
+            $line->discount() === null ? null : self::rounded($discountBeforeIgv),
+            $roundedSubtotal,
+            $treatment->toNubefact(),
+            $roundedTax,
+            $roundedTotal,
+        );
     }
 
     public function total(): BigDecimal
@@ -84,59 +115,6 @@ final readonly class LineProjection
         }
 
         return $value;
-    }
-
-    private static function taxed(Line $line, IgvRate $igvRate): self
-    {
-        $quantity  = $line->quantity()->value();
-        $unitPrice = BigRational::of($line->unitPrice()->value());
-        $discount  = BigRational::of($line->discount()?->value() ?? '0');
-        $factor    = $igvRate->factor();
-
-        $unitValue         = $unitPrice->dividedBy($factor);
-        $discountBeforeIgv = $discount->dividedBy($factor);
-        $subtotal          = $unitValue->multipliedBy($quantity)->minus($discountBeforeIgv);
-        $tax               = $subtotal->multipliedBy($igvRate->decimal());
-        $total             = $unitPrice->multipliedBy($quantity)->minus($discount);
-
-        $roundedSubtotal          = self::rounded($subtotal);
-        $roundedTax               = self::rounded($tax);
-        $roundedTotal             = self::rounded($total);
-        $roundedDiscountBeforeIgv = self::rounded($discountBeforeIgv);
-
-        return new self(
-            $line->item(),
-            $line->quantity(),
-            $unitValue->toScale(10, RoundingMode::HalfUp),
-            $line->unitPrice()->value(),
-            $line->discount() === null ? null : $roundedDiscountBeforeIgv,
-            $roundedSubtotal,
-            $line->tax()->toNubefact(),
-            $roundedTax,
-            $roundedTotal,
-        );
-    }
-
-    private static function untaxed(Line $line): self
-    {
-        $unitPrice = $line->unitPrice()->value();
-        $discount  = $line->discount()?->value() ?? BigDecimal::zero();
-        $subtotal  = $unitPrice->multipliedBy($line->quantity()->value())->minus($discount);
-
-        $roundedSubtotal = $subtotal->toScale(2, RoundingMode::HalfUp);
-        $roundedDiscount = $discount->toScale(2, RoundingMode::HalfUp);
-
-        return new self(
-            $line->item(),
-            $line->quantity(),
-            $unitPrice,
-            $unitPrice,
-            $line->discount() === null ? null : $roundedDiscount,
-            $roundedSubtotal,
-            $line->tax()->toNubefact(),
-            BigDecimal::zero()->toScale(2),
-            $roundedSubtotal,
-        );
     }
 
     private static function rounded(BigRational $value): BigDecimal

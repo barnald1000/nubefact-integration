@@ -16,6 +16,7 @@ final class IgvTreatmentTest extends TestCase
     public static function treatments(): iterable
     {
         yield 'taxed included' => [IGVTreatment::taxedIncluded(), 'taxed_included', IGVType::GravadoOnerous];
+        yield 'taxed excluded' => [IGVTreatment::taxedExcluded(), 'taxed_excluded', IGVType::GravadoOnerous];
         yield 'exonerated' => [IGVTreatment::exonerated(), 'exonerated', IGVType::ExoneratedOnerous];
         yield 'unaffected' => [IGVTreatment::unaffected(), 'unaffected', IGVType::ExemptOnerous];
     }
@@ -30,9 +31,20 @@ final class IgvTreatmentTest extends TestCase
     }
 
     #[Test]
+    public function it_tells_whether_the_amounts_are_taxed_and_carry_igv(): void
+    {
+        self::assertTrue(IGVTreatment::taxedIncluded()->isTaxed());
+        self::assertTrue(IGVTreatment::taxedIncluded()->includesIgv());
+        self::assertTrue(IGVTreatment::taxedExcluded()->isTaxed());
+        self::assertFalse(IGVTreatment::taxedExcluded()->includesIgv());
+        self::assertFalse(IGVTreatment::exonerated()->isTaxed());
+        self::assertFalse(IGVTreatment::unaffected()->isTaxed());
+    }
+
+    #[Test]
     public function it_rejects_an_unknown_persistence_key(): void
     {
         $this->expectException(InvalidLine::class);
-        IGVTreatment::fromKey('taxed_excluded');
+        IGVTreatment::fromKey('unknown');
     }
 }

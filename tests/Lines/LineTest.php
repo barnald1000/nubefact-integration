@@ -136,6 +136,57 @@ final class LineTest extends TestCase
         self::assertSame('0', $projection->toNubefact()['total']);
     }
 
+    public static function taxedExcludedLines(): iterable
+    {
+        yield 'discount on one unit' => ['1', '500.00', '100.00', ['500', '590', '100'], ['400.00', '72.00', '472.00']];
+        yield 'several units' => ['5', '20.00', '10.00', ['20', '23.6', '10'], ['90.00', '16.20', '106.20']];
+    }
+
+    #[Test]
+    #[DataProvider('taxedExcludedLines')]
+    public function it_adds_igv_on_top_of_a_taxed_line_with_amounts_before_igv(
+        string $quantity,
+        string $unitPrice,
+        string $discount,
+        array $nubefactAmounts,
+        array $results,
+    ): void {
+        $projection = $this->project(Line::onerous(
+            item     : self::item(),
+            quantity : Quantity::of($quantity),
+            unitPrice: Amount::of($unitPrice),
+            tax      : IGVTreatment::taxedExcluded(),
+            discount : Amount::of($discount),
+        ));
+
+        [$unitValue, $unitPriceWithIgv, $discountBeforeIgv] = $nubefactAmounts;
+        [$subtotal, $tax, $total]                           = $results;
+
+        self::assertSame(1, $projection->toNubefact()['tipo_de_igv']);
+        self::assertSame($unitValue, $projection->toNubefact()['valor_unitario']);
+        self::assertSame($unitPriceWithIgv, $projection->toNubefact()['precio_unitario']);
+        self::assertSame($discountBeforeIgv, $projection->toNubefact()['descuento']);
+        self::assertSame($subtotal, (string) $projection->subtotal());
+        self::assertSame($tax, (string) $projection->tax());
+        self::assertSame($total, (string) $projection->total());
+    }
+
+    #[Test]
+    public function it_accepts_a_full_discount_on_a_taxed_line_with_amounts_before_igv(): void
+    {
+        $projection = $this->project(Line::onerous(
+            item     : self::item(),
+            quantity : Quantity::of('1'),
+            unitPrice: Amount::of('100.00'),
+            tax      : IGVTreatment::taxedExcluded(),
+            discount : Amount::of('100.00'),
+        ));
+
+        self::assertSame('0.00', (string) $projection->subtotal());
+        self::assertSame('0.00', (string) $projection->tax());
+        self::assertSame('0.00', (string) $projection->total());
+    }
+
     #[Test]
     public function it_rejects_a_non_positive_quantity(): void
     {

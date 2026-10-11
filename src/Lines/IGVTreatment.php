@@ -13,6 +13,8 @@ final readonly class IGVTreatment
 {
     private const TAXED_INCLUDED = 'taxed_included';
 
+    private const TAXED_EXCLUDED = 'taxed_excluded';
+
     private const EXONERATED = 'exonerated';
 
     private const UNAFFECTED = 'unaffected';
@@ -22,6 +24,11 @@ final readonly class IGVTreatment
     public static function taxedIncluded(): self
     {
         return new self(self::TAXED_INCLUDED);
+    }
+
+    public static function taxedExcluded(): self
+    {
+        return new self(self::TAXED_EXCLUDED);
     }
 
     public static function exonerated(): self
@@ -38,6 +45,7 @@ final readonly class IGVTreatment
     {
         return match ($key) {
             self::TAXED_INCLUDED => self::taxedIncluded(),
+            self::TAXED_EXCLUDED => self::taxedExcluded(),
             self::EXONERATED     => self::exonerated(),
             self::UNAFFECTED     => self::unaffected(),
             default              => throw new InvalidLine("Tratamiento de IGV desconocido: {$key}."),
@@ -51,18 +59,19 @@ final readonly class IGVTreatment
 
     public function isTaxed(): bool
     {
-        return $this->key === self::TAXED_INCLUDED;
+        return $this->key === self::TAXED_INCLUDED || $this->key === self::TAXED_EXCLUDED;
     }
 
-    public function isExonerated(): bool
+    public function includesIgv(): bool
     {
-        return $this->key === self::EXONERATED;
+        return $this->key === self::TAXED_INCLUDED;
     }
 
     public function toNubefact(): IGVType
     {
         return match ($this->key) {
-            self::TAXED_INCLUDED => IGVType::GravadoOnerous,
+            self::TAXED_INCLUDED,
+            self::TAXED_EXCLUDED => IGVType::GravadoOnerous,
             self::EXONERATED     => IGVType::ExoneratedOnerous,
             self::UNAFFECTED     => IGVType::ExemptOnerous,
         };
