@@ -15,4 +15,16 @@ enum Currency: int
     case USD = 2;
 
     case PEN = 1;
+
+    /**
+     * ISO 4217 code used by monetary value objects.
+     */
+    public function code(): string
+    {
+        return match ($this) {
+            self::EUR => 'EUR',
+            self::USD => 'USD',
+            self::PEN => 'PEN',
+        };
+    }
 }
