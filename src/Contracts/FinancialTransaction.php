@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace Savia\NubeFactIntegration\Contracts;
 
 use DateTimeInterface;
+use Savia\NubeFactIntegration\Customer;
 use Savia\NubeFactIntegration\Items;
 use Savia\NubeFactIntegration\Keywords\Currency;
 use Savia\NubeFactIntegration\Keywords\DocumentType;
