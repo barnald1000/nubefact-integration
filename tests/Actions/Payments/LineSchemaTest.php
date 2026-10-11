@@ -87,6 +87,40 @@ final class LineSchemaTest extends TestCase
         self::assertSame(8, $withCode['tipo_de_igv']);
     }
 
+    #[Test]
+    public function it_sends_a_missing_internal_code_as_null(): void
+    {
+        $schema = self::schema(Line::onerous(
+            item     : Item::of(null, 'Matrícula 2026', Unit::product()),
+            quantity : Quantity::of(2),
+            unitPrice: Amount::of('590.00'),
+            tax      : IGVTreatment::taxedIncluded(),
+        ));
+
+        self::assertArrayHasKey('codigo', $schema);
+        self::assertNull($schema['codigo']);
+        self::assertArrayNotHasKey('codigo_producto_sunat', $schema);
+        self::assertSame('NIU', $schema['unidad_de_medida']);
+        self::assertSame(2, $schema['cantidad']);
+    }
+
+    #[Test]
+    public function it_sends_the_igv_type_of_each_treatment(): void
+    {
+        $types = [];
+
+        foreach ([IGVTreatment::taxedIncluded(), IGVTreatment::taxedExcluded(), IGVTreatment::exonerated(), IGVTreatment::unaffected()] as $treatment) {
+            $types[] = self::schema(Line::onerous(
+                item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service()),
+                quantity : Quantity::of(1),
+                unitPrice: Amount::of('100.00'),
+                tax      : $treatment,
+            ))['tipo_de_igv'];
+        }
+
+        self::assertSame([1, 1, 8, 9], $types);
+    }
+
     private static function schema(Line $line): array
     {
         return (new LineSchema(LineProjection::of($line, IgvRate::standard())))->value();

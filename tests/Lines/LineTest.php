@@ -218,6 +218,46 @@ final class LineTest extends TestCase
     }
 
     #[Test]
+    public function it_compares_the_discount_with_the_whole_line_amount_not_with_one_unit(): void
+    {
+        $line = Line::onerous(
+            item     : self::item(),
+            quantity : Quantity::of(3),
+            unitPrice: Amount::of('10.00'),
+            tax      : IGVTreatment::taxedIncluded(),
+            discount : Amount::of('30.00'),
+        );
+
+        self::assertSame('30.00', (string) $line->discount()?->value());
+
+        $this->expectException(InvalidLine::class);
+
+        Line::onerous(
+            item     : self::item(),
+            quantity : Quantity::of(3),
+            unitPrice: Amount::of('10.00'),
+            tax      : IGVTreatment::taxedIncluded(),
+            discount : Amount::of('30.01'),
+        );
+    }
+
+    #[Test]
+    public function it_exposes_the_facts_it_was_built_from(): void
+    {
+        $item     = self::item();
+        $quantity = Quantity::of(2);
+        $price    = Amount::of('50.00');
+        $tax      = IGVTreatment::exonerated();
+        $line     = Line::onerous($item, $quantity, $price, $tax);
+
+        self::assertSame($item, $line->item());
+        self::assertSame($quantity, $line->quantity());
+        self::assertSame($price, $line->unitPrice());
+        self::assertSame($tax, $line->tax());
+        self::assertNull($line->discount());
+    }
+
+    #[Test]
     public function it_uses_the_standard_document_igv_rate(): void
     {
         self::assertSame('18.00', (string) IgvRate::standard()->percentage());

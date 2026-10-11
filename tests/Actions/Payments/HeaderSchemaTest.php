@@ -41,6 +41,37 @@ final class HeaderSchemaTest extends TestCase
         self::assertSame(572.0, $header['total']);
     }
 
+    #[Test]
+    public function it_sends_every_header_field_nubefact_receives_today(): void
+    {
+        $header = (new HeaderSchema(DocumentProjection::of(new LinesTransaction(
+            self::line('118.00', IGVTreatment::taxedIncluded()),
+        ))))->value();
+
+        self::assertSame([
+            'tipo_de_comprobante'               => 2,
+            'serie'                             => 'B001',
+            'numero'                            => 1,
+            'sunat_transaction'                 => 1,
+            'cliente_tipo_de_documento'         => 1,
+            'cliente_numero_de_documento'       => '12345678',
+            'cliente_denominacion'              => 'Juan Pérez',
+            'cliente_direccion'                 => null,
+            'cliente_email'                     => null,
+            'fecha_de_emision'                  => '2026-10-11',
+            'moneda'                            => 1,
+            'porcentaje_de_igv'                 => 18.0,
+            'total_descuento'                   => 0.0,
+            'total_gravada'                     => 100.0,
+            'total_exonerada'                   => 0.0,
+            'total_inafecta'                    => 0.0,
+            'total_igv'                         => 18.0,
+            'total'                             => 118.0,
+            'enviar_automaticamente_a_la_sunat' => true,
+            'enviar_automaticamente_al_cliente' => true,
+        ], $header);
+    }
+
     private static function line(string $price, IGVTreatment $treatment, ?string $discount = null): Line
     {
         return Line::onerous(

@@ -20,18 +20,28 @@ final class PaymentsSenderTest extends TestCase
     #[Test]
     public function it_builds_the_items_from_the_transaction_lines(): void
     {
-        $service = new class () implements NubeFactService {
+        $answer  = new Response(200);
+        $service = new class ($answer) implements NubeFactService {
             public array $sent = [];
+
+            public ?Operation $operation = null;
+
+            public function __construct(private readonly ResponseInterface $answer) {}
 
             public function call(Operation $operation, array $data): ResponseInterface
             {
-                $this->sent = $data;
+                $this->operation = $operation;
+                $this->sent      = $data;
 
-                return new Response(200);
+                return $this->answer;
             }
         };
 
-        (new PaymentsSender($service))->send(new SingleEntryItemTransaction(self::invoiceBillingInfo(), 1, 'F001'));
+        $response = (new PaymentsSender($service))->send(new SingleEntryItemTransaction(self::invoiceBillingInfo(), 1, 'F001'));
+
+        self::assertSame($answer, $response);
+        self::assertSame(Operation::GenerateDocument, $service->operation);
+        self::assertSame('F001', $service->sent['serie']);
 
         self::assertCount(1, $service->sent['items']);
         self::assertSame(100.0, $service->sent['items'][0]['valor_unitario']);

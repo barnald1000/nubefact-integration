@@ -84,6 +84,41 @@ final class DocumentProjectionTest extends TestCase
         }
     }
 
+    #[Test]
+    public function it_keeps_the_lines_in_the_order_they_were_given(): void
+    {
+        $document = self::project(
+            self::line('118.00', IGVTreatment::taxedIncluded()),
+            self::line('50.00', IGVTreatment::exonerated()),
+            self::line('20.00', IGVTreatment::unaffected()),
+        );
+
+        $subtotals = array_map(static fn($line): string => (string) $line->subtotal(), $document->lines()->items());
+
+        self::assertSame(['100.00', '50.00', '20.00'], $subtotals);
+    }
+
+    #[Test]
+    public function it_exposes_the_transaction_and_its_igv_rate(): void
+    {
+        $transaction = new LinesTransaction(self::line('118.00', IGVTreatment::taxedIncluded()));
+        $document    = DocumentProjection::of($transaction);
+
+        self::assertSame($transaction, $document->transaction());
+        self::assertSame('0.18', (string) $document->igvRate()->decimal());
+    }
+
+    #[Test]
+    public function a_document_without_lines_has_zero_totals(): void
+    {
+        $document = self::project();
+
+        self::assertSame([], $document->lines()->items());
+        self::assertSame('0.00', (string) $document->total());
+        self::assertSame('0.00', (string) $document->totalTaxes());
+        self::assertSame('0.00', (string) $document->totalTaxed());
+    }
+
     private static function project(Line ...$lines): DocumentProjection
     {
         return DocumentProjection::of(new LinesTransaction(...$lines));
