@@ -2,6 +2,28 @@
 
 Todos los cambios relevantes de esta librería se documentan aquí. El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado sigue [Semantic Versioning](https://semver.org/lang/es/). Las versiones anteriores a la 0.5.0 no tienen registro en este archivo.
 
+## [0.6.0] - 2026-10-12
+
+La moneda, la tasa de IGV y las líneas pasan a formar una operación, que se calcula como un todo y puede proyectarse antes de que exista el documento. Todas las líneas se calculan con la misma tasa que se envía en la cabecera.
+
+### Cambios que rompen compatibilidad
+
+- `FinancialTransaction` entrega `operation(): Operation` en lugar de `igvRate()`, `currency()` y `lines()`.
+- `DocumentProjection` deja de calcular importes: compone el documento, su operación y la proyección de esa operación, y pasa a ser de uso interno. Los importes se obtienen de `OperationProjection`.
+- `HeaderSchema` recibe una `DocumentProjection`.
+- El enum `Keywords\Operation` se renombra a `Keywords\Action`. `NubeFactService::call()` recibe un `Action`.
+- `Totalizable` exige `subtotal()`.
+
+### Añadido
+
+- `Operation::of(Currency, IgvRate, Lines)`, con `currency()`, `igvRate()`, `lines()` y `project()`.
+- `OperationProjection`, con los importes de cada línea y los totales de cabecera, sin identidad de documento.
+- `subtotal()` en `Totalizable` y `OperationProjection`. El subtotal de la operación es la suma de los subtotales de sus líneas: gravada, exonerada e inafecta.
+
+### Cambiado
+
+- `PaymentsSender` pide la operación del documento una sola vez por envío, de modo que la cabecera y los ítems salen del mismo cálculo.
+
 ## [0.5.1] - 2026-10-11
 
 ### Añadido
