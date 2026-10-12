@@ -14,13 +14,14 @@ $line = Line::onerous(
     discount : Amount::of('250.00'),         // beca del 50 %, con IGV
 );
 
-// La librería calcula los importes del documento ($document implementa FinancialTransaction)
-$projection = DocumentProjection::of($document);
+// La operación reúne la moneda, la tasa y las líneas; la librería calcula sus importes
+$operation  = Operation::of(Currency::PEN, IgvRate::of(18), new Lines([$line]));
+$projection = $operation->project();
 $projection->totalTaxed();   // 211.86
 $projection->totalTaxes();   // 38.14
 $projection->total();        // 250.00
 
-// y los envía a Nubefact
+// El documento ($document implementa FinancialTransaction) entrega su operación y se envía a Nubefact
 $processor = new TransactionProcessor(new PaymentsSender(new GuzzleNubeFactService($url, $token)), $logger);
 $responses = $processor->process(FinancialTransactions::from([$document]));
 ```
@@ -37,13 +38,13 @@ El ejemplo asume que la aplicación ya implementa los contratos de documento y c
 
 ## Principio
 
-La librería no recibe importes calculados. Recibe los hechos comerciales del documento y deriva de ellos todos los importes que pide Nubefact. Los ítems y la cabecera salen del mismo cálculo.
+La librería no recibe importes calculados. Recibe los hechos comerciales de la operación y deriva de ellos todos los importes que pide Nubefact. Los ítems y la cabecera salen del mismo cálculo.
 
 Solo se valida el dinero: importes, cantidades y descuentos. Nubefact no comprueba que los importes sean coherentes entre sí, pero sí valida el resto de los datos (cliente, serie, número, descripción, unidad de medida, RUC en facturas), y la librería los envía tal cual.
 
 ## Superficie de integración
 
-La librería provee las líneas ([`Lines`](src/Lines)), las proyecciones con el cálculo ([`Projection`](src/Projection)), los esquemas del JSON ([`Actions/Payments`](src/Actions/Payments)), el envío ([`TransactionProcessor`](src/TransactionProcessor.php), [`GuzzleNubeFactService`](src/GuzzleNubeFactService.php)) y las respuestas ([`Responses`](src/Responses)).
+La librería provee las líneas ([`Lines`](src/Lines)), la operación ([`Operation`](src/Operation.php)), las proyecciones con el cálculo ([`Projection`](src/Projection)), los esquemas del JSON ([`Actions/Payments`](src/Actions/Payments)), el envío ([`TransactionProcessor`](src/TransactionProcessor.php), [`GuzzleNubeFactService`](src/GuzzleNubeFactService.php)) y las respuestas ([`Responses`](src/Responses)).
 
 La aplicación implementa el contrato del documento, el del cliente y, si lo necesita, el registro de respuestas.
 
@@ -51,15 +52,13 @@ La aplicación implementa el contrato del documento, el del cliente y, si lo nec
 
 - **FinancialTransaction**
     - Contrato: [`FinancialTransaction`](src/Contracts/FinancialTransaction.php)
-    - Representa un comprobante. Solo entrega hechos:
+    - Representa un comprobante: la identidad del documento más la operación que registra. Solo entrega hechos:
         - `id(): string` — identificador de la aplicación, usado para correlacionar respuestas.
         - `number(): int` y `serial(): string` — número y serie.
         - `type(): DocumentType` — [`DocumentType`](src/Keywords/DocumentType.php): `Invoice`, `Receipt`, `CreditNote`, `DebitNote`.
-        - `igvRate(): IgvRate` — tasa del documento, que define la aplicación con [`IgvRate::of()`](src/Keywords/IgvRate.php) a partir de un porcentaje (`int` o `float`), por ejemplo `IgvRate::of(18)` o `IgvRate::of(18.00)`. `IgvRate::standard()` es la tasa general de 18 %.
         - `customer(): Customer` — el comprador.
         - `issueDate(): DateTimeInterface` — fecha de emisión.
-        - `currency(): Currency` — [`Currency`](src/Keywords/Currency.php): `PEN`, `USD`, `EUR`.
-        - `lines(): Lines` — las líneas del documento.
+        - `operation(): Operation` — la [operación](#operación) del documento.
 
 - **Customer**
     - Contrato: [`Customer`](src/Contracts/Customer.php), extiende [`Identifiable`](src/Contracts/Identifiable.php).
@@ -105,6 +104,19 @@ Una misma venta puede expresarse de las dos formas gravadas: `taxedIncluded()` c
 
 `key()` devuelve la clave para persistir el tratamiento (`taxed_included`, `taxed_excluded`, `exonerated`, `unaffected`) e `IGVTreatment::fromKey()` lo reconstruye.
 
+## Operación
+
+[`Operation`](src/Operation.php) reúne los hechos que se calculan juntos: la moneda, la tasa de IGV y las líneas. Son inseparables, de modo que todas las líneas se calculan con la misma tasa que se envía en la cabecera. La operación existe antes que el documento: sus importes pueden calcularse al registrar la venta, sin serie ni número.
+
+```php
+$operation = Operation::of(Currency::PEN, IgvRate::of(18), $lines);
+$operation->project();   // OperationProjection
+```
+
+- [`Currency`](src/Keywords/Currency.php): `PEN`, `USD`, `EUR`.
+- [`IgvRate::of()`](src/Keywords/IgvRate.php) recibe un porcentaje (`int` o `float`) mayor que 0, de hasta 100 y con hasta 2 decimales, por ejemplo `IgvRate::of(18)` o `IgvRate::of(18.00)`. `IgvRate::standard()` es la tasa general de 18 %.
+- [`Lines`](src/Lines/Lines.php) es la colección de líneas.
+
 ## Cálculo
 
 Cada importe se calcula exacto y se redondea una vez, mitad hacia arriba. Los totales de cabecera son la suma de las líneas ya redondeadas.
@@ -123,23 +135,25 @@ Sin redondeos de por medio, los resultados coinciden con el Excel de cálculo de
 
 ## Proyecciones
 
-Una proyección contiene los importes calculados de una línea o de un documento, y solo se obtiene a partir de sus hechos.
+Una proyección contiene los importes calculados de una operación o de una línea, y solo se obtiene a partir de sus hechos.
 
-- **DocumentProjection**
-    - Servicio: [`DocumentProjection`](src/Projection/DocumentProjection.php)
-    - `DocumentProjection::of(FinancialTransaction $transaction)` calcula las líneas con la tasa del documento y suma la cabecera.
-    - Expone `lines(): LineProjections`, `subtotal()` (suma de los subtotales de todas las líneas), `totalTaxed()`, `totalExonerated()`, `totalUnaffected()`, `totalDiscounts()`, `totalTaxes()`, `total()`, `transaction()` e `igvRate()`.
+- **OperationProjection**
+    - Servicio: [`OperationProjection`](src/Projection/OperationProjection.php)
+    - Se obtiene con `$operation->project()`. Calcula cada línea con la tasa de la operación y suma la cabecera. No tiene identidad de documento.
+    - Expone `lines(): LineProjections`, `subtotal()` (suma de los subtotales de todas las líneas), `totalTaxed()`, `totalExonerated()`, `totalUnaffected()`, `totalDiscounts()`, `totalTaxes()` y `total()`.
 
 - **LineProjection**
     - Servicio: [`LineProjection`](src/Projection/LineProjection.php)
-    - `LineProjection::of(Line $line, IgvRate $igvRate)` calcula una línea.
+    - La crea `OperationProjection` y se lee desde `lines()`. `LineProjection::of()` es público por limitación del lenguaje, pero es de uso interno.
     - Expone `subtotal()`, `totalTaxes()`, `total()`, `totalDiscounts()` (antes de IGV), `unitValue()`, `unitPrice()`, `igvType()`, `item()` y `quantity()`.
 
 Ambas implementan [`Totalizable`](src/Contracts/Totalizable.php): `subtotal()`, `total()`, `totalDiscounts()` y `totalTaxes()`.
 
+[`DocumentProjection`](src/Projection/DocumentProjection.php) es interna: compone el documento, su operación y la proyección de esa operación, pidiendo `operation()` una sola vez, para que la cabecera y los ítems salgan del mismo cálculo.
+
 Los importes son `Brick\Math\BigDecimal` con 2 decimales. Se guardan con `(string) $importe` en columnas `DECIMAL(10,2)`, nunca como `float`.
 
-Si la aplicación persiste los resultados, conviene recalcularlos desde los hechos antes de emitir y no enviar el documento si difieren.
+Si la aplicación persiste los resultados, puede calcularlos al registrar la venta con `Operation::project()`. Antes de emitir conviene recalcularlos desde los hechos y no enviar el documento si difieren.
 
 ## Envío a Nubefact
 
@@ -150,7 +164,7 @@ $processor = new TransactionProcessor(new PaymentsSender($service), $logger);   
 $responses = $processor->process(FinancialTransactions::from($documents));
 ```
 
-- [`PaymentsSender`](src/Actions/Payments/PaymentsSender.php) calcula la proyección del documento y arma el JSON con [`HeaderSchema`](src/Actions/Payments/HeaderSchema.php) para la cabecera y [`LineSchema`](src/Actions/Payments/LineSchema.php) para los ítems. Los esquemas traducen; no calculan.
+- [`PaymentsSender`](src/Actions/Payments/PaymentsSender.php) obtiene la `DocumentProjection` del documento y arma el JSON con [`HeaderSchema`](src/Actions/Payments/HeaderSchema.php) para la cabecera y [`LineSchema`](src/Actions/Payments/LineSchema.php) para los ítems. Los esquemas traducen; no calculan.
 - [`DecimalFormat`](src/DecimalFormat.php) decide cómo se escribe cada número en el JSON.
 - [`TransactionProcessor`](src/TransactionProcessor.php) envía los documentos uno por uno, acumula las respuestas y las registra si recibe un `LoggerRepository`. Nubefact acepta un comprobante por solicitud.
 - [`GuzzleNubeFactService`](src/GuzzleNubeFactService.php) hace el `POST` a la ruta con `Authorization: Token token=...` y agrega `operacion: generar_comprobante`.

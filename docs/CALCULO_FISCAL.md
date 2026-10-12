@@ -1,6 +1,6 @@
 # Cálculo fiscal
 
-Este documento describe cómo la librería deriva los importes de cada línea y de la cabecera a partir de los hechos comerciales del documento. El uso de la API está en el [`readme.md`](../readme.md).
+Este documento describe cómo la librería deriva los importes de cada línea y de la cabecera a partir de los hechos comerciales de la operación. El uso de la API está en el [`readme.md`](../readme.md).
 
 ## Alcance
 
@@ -10,14 +10,14 @@ Boletas y facturas con operaciones onerosas. No cubre notas de crédito y débit
 
 | Dato               | Pertenece a | Significado                                                          |
 |--------------------|-------------|----------------------------------------------------------------------|
-| Moneda             | Documento   | Moneda de todos los importes.                                        |
-| Tasa de IGV        | Documento   | La define la aplicación; 18 % en el caso general. Nubefact la recibe en `porcentaje_de_igv`. |
+| Moneda             | Operación   | Moneda de todos los importes.                                        |
+| Tasa de IGV        | Operación   | La define la aplicación; 18 % en el caso general. Nubefact la recibe en `porcentaje_de_igv`. |
 | Cantidad           | Línea       | Unidades vendidas; un entero mayor que cero.                         |
 | Precio unitario    | Línea       | Importe por unidad antes del descuento.                              |
 | Descuento          | Línea       | Reducción de toda la línea, no por unidad.                           |
 | Tratamiento de IGV | Línea       | Cómo tributa la línea y en qué base vienen el precio y el descuento. |
 
-El precio unitario y el descuento tienen hasta 2 decimales y siempre están en la misma base: ambos incluyen IGV o ninguno lo incluye. La tasa no forma parte de la línea.
+El precio unitario y el descuento tienen hasta 2 decimales y siempre están en la misma base: ambos incluyen IGV o ninguno lo incluye. La tasa no forma parte de la línea: es de la operación, que reúne la moneda, la tasa y las líneas, de modo que todas las líneas se calculan con la misma tasa que se envía en la cabecera.
 
 ## Tratamientos de IGV
 
