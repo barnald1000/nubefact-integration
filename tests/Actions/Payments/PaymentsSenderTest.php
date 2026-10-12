@@ -8,7 +8,7 @@ use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
 use Savia\NubeFactIntegration\Actions\Payments\PaymentsSender;
-use Savia\NubeFactIntegration\Keywords\Operation;
+use Savia\NubeFactIntegration\Keywords\Action;
 use Savia\NubeFactIntegration\NubeFactService;
 use Savia\NubeFactIntegration\Tests\Support\SingleEntryItemTransaction;
 use Savia\NubeFactIntegration\Tests\TestCase;
@@ -24,13 +24,13 @@ final class PaymentsSenderTest extends TestCase
         $service = new class ($answer) implements NubeFactService {
             public array $sent = [];
 
-            public ?Operation $operation = null;
+            public ?Action $action = null;
 
             public function __construct(private readonly ResponseInterface $answer) {}
 
-            public function call(Operation $operation, array $data): ResponseInterface
+            public function call(Action $action, array $data): ResponseInterface
             {
-                $this->operation = $operation;
+                $this->action    = $action;
                 $this->sent      = $data;
 
                 return $this->answer;
@@ -40,7 +40,7 @@ final class PaymentsSenderTest extends TestCase
         $response = (new PaymentsSender($service))->send(new SingleEntryItemTransaction(self::invoiceBillingInfo(), 1, 'F001'));
 
         self::assertSame($answer, $response);
-        self::assertSame(Operation::GenerateDocument, $service->operation);
+        self::assertSame(Action::GenerateDocument, $service->action);
         self::assertSame('F001', $service->sent['serie']);
 
         self::assertCount(1, $service->sent['items']);

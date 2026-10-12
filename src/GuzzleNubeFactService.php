@@ -11,7 +11,7 @@ namespace Savia\NubeFactIntegration;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\ResponseInterface;
-use Savia\NubeFactIntegration\Keywords\Operation;
+use Savia\NubeFactIntegration\Keywords\Action;
 
 use function array_merge;
 use function json_encode;
@@ -28,11 +28,11 @@ final class GuzzleNubeFactService implements NubeFactService
         self::$client = self::createClient($baseURI, $apiToken);
     }
 
-    public function call(Operation $operation, array $data): ResponseInterface
+    public function call(Action $action, array $data): ResponseInterface
     {
         return $this->client()->post(
             self::RootURI,
-            ['body' => json_encode(self::request($operation, with: $data))]
+            ['body' => json_encode(self::request($action, with: $data))]
         );
     }
 
@@ -54,8 +54,8 @@ final class GuzzleNubeFactService implements NubeFactService
         ]);
     }
 
-    private static function request(Operation $operation, array $with): array
+    private static function request(Action $action, array $with): array
     {
-        return array_merge(['operacion' => $operation->value], $with);
+        return array_merge(['operacion' => $action->value], $with);
     }
 }

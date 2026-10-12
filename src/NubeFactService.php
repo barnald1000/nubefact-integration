@@ -9,9 +9,9 @@ declare(strict_types=1);
 namespace Savia\NubeFactIntegration;
 
 use Psr\Http\Message\ResponseInterface;
-use Savia\NubeFactIntegration\Keywords\Operation;
+use Savia\NubeFactIntegration\Keywords\Action;
 
 interface NubeFactService
 {
-    public function call(Operation $operation, array $data): ResponseInterface;
+    public function call(Action $action, array $data): ResponseInterface;
 }

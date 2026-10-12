@@ -10,7 +10,7 @@ namespace Savia\NubeFactIntegration\Actions\Payments;
 
 use Psr\Http\Message\ResponseInterface;
 use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
-use Savia\NubeFactIntegration\Keywords\Operation;
+use Savia\NubeFactIntegration\Keywords\Action;
 use Savia\NubeFactIntegration\NubeFactService;
 use Savia\NubeFactIntegration\Projection\DocumentProjection;
 use Savia\NubeFactIntegration\Projection\LineProjection;
@@ -33,7 +33,7 @@ final readonly class PaymentsSender implements Sender
                           ->values();
 
         return $this->service->call(
-            Operation::GenerateDocument,
+            Action::GenerateDocument,
             array_merge($header->value(), [
                 'items' => $lines,
             ])

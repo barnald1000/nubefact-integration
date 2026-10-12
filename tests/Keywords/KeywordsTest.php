@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Savia\NubeFactIntegration\Tests\Keywords;
 
 use PHPUnit\Framework\Attributes\Test;
+use Savia\NubeFactIntegration\Keywords\Action;
 use Savia\NubeFactIntegration\Keywords\Currency;
 use Savia\NubeFactIntegration\Keywords\DocumentType;
 use Savia\NubeFactIntegration\Keywords\IdentificationType;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Keywords\IGVType;
-use Savia\NubeFactIntegration\Keywords\Operation;
 use Savia\NubeFactIntegration\Tests\TestCase;
 
 /**
@@ -78,9 +78,9 @@ final class KeywordsTest extends TestCase
     }
 
     #[Test]
-    public function the_operation_generates_a_document(): void
+    public function the_action_generates_a_document(): void
     {
-        self::assertSame('generar_comprobante', Operation::GenerateDocument->value);
+        self::assertSame('generar_comprobante', Action::GenerateDocument->value);
     }
 
     #[Test]

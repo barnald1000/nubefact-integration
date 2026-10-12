@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Savia\NubeFactIntegration\Keywords;
 
-enum Operation: string
+enum Action: string
 {
     case GenerateDocument = 'generar_comprobante';
 }
