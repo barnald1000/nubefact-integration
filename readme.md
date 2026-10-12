@@ -55,7 +55,7 @@ La aplicación implementa el contrato del documento, el del cliente y, si lo nec
         - `id(): string` — identificador de la aplicación, usado para correlacionar respuestas.
         - `number(): int` y `serial(): string` — número y serie.
         - `type(): DocumentType` — [`DocumentType`](src/Keywords/DocumentType.php): `Invoice`, `Receipt`, `CreditNote`, `DebitNote`.
-        - `igvRate(): IgvRate` — tasa del documento; [`IgvRate::standard()`](src/Keywords/IgvRate.php) es 18 %.
+        - `igvRate(): IgvRate` — tasa del documento, que define la aplicación con [`IgvRate::of()`](src/Keywords/IgvRate.php) a partir de un porcentaje (`int` o `float`), por ejemplo `IgvRate::of(18)` o `IgvRate::of(18.00)`. `IgvRate::standard()` es la tasa general de 18 %.
         - `customer(): Customer` — el comprador.
         - `issueDate(): DateTimeInterface` — fecha de emisión.
         - `currency(): Currency` — [`Currency`](src/Keywords/Currency.php): `PEN`, `USD`, `EUR`.
@@ -167,6 +167,7 @@ $responses = $processor->process(FinancialTransactions::from($documents));
 | Error                                          | Cuándo                                                                                                                                        |
 |------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | `InvalidLine` (`DomainException`)              | Un importe negativo o con más de 2 decimales, una cantidad no positiva, un precio cero, un descuento mayor que la línea o una clave de tratamiento desconocida. |
+| `InvalidIgvRate` (`DomainException`)           | Una tasa de IGV menor o igual que 0, mayor que 100, no finita o con más de 2 decimales.                                             |
 | `InvalidSafelistItem`                          | Una colección tipada (`Lines`, `LineProjections`, `FinancialTransactions`) recibe un elemento de otro tipo.                                     |
 | `InvalidPaymentStructure` (`RuntimeException`) | A un esquema le falta una clave requerida por Nubefact.                                                                                       |
 | `LogicException`                               | Una línea tiene un tipo de IGV sin total de cabecera soportado.                                                                               |

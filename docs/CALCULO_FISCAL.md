@@ -1,285 +1,227 @@
-# Cálculo fiscal de líneas y documentos
+# Cálculo fiscal
 
-> **Estado:** este documento describe el cálculo implementado en `src/Lines` y `src/Projection` desde la versión 0.5.0. El uso de la API está en el [`readme.md`](../readme.md).
->
-> **Alcance:** boletas y facturas, operaciones onerosas, importes de la academia. Quedan fuera notas de crédito y débito, operaciones gratuitas, IVAP, ISC, impuesto a bolsas, exportación, percepciones, retenciones, detracciones, descuentos globales y anticipos.
+Este documento describe cómo la librería deriva los importes de cada línea y de la cabecera a partir de los hechos comerciales del documento. El uso de la API está en el [`readme.md`](../readme.md).
 
----
+## Alcance
 
-## 1. Qué problema resuelve esta librería
+Boletas y facturas con operaciones onerosas. No cubre notas de crédito y débito, operaciones gratuitas, IVAP, ISC, impuesto a las bolsas plásticas, exportación, percepciones, retenciones, detracciones, descuentos globales ni anticipos.
 
-Nubefact acepta casi cualquier combinación de importes. Si una aplicación envía por separado precio, descuento, subtotal, IGV y totales, esos valores pueden contradecirse sin que nadie lo detecte. Eso ocurrió en producción: se envió un precio ya descontado junto con el descuento original.
+## Hechos de entrada
 
-La librería evita esa doble verdad:
+| Dato               | Pertenece a | Significado                                                          |
+|--------------------|-------------|----------------------------------------------------------------------|
+| Moneda             | Documento   | Moneda de todos los importes.                                        |
+| Tasa de IGV        | Documento   | La define la aplicación; 18 % en el caso general. Nubefact la recibe en `porcentaje_de_igv`. |
+| Cantidad           | Línea       | Unidades vendidas; un entero mayor que cero.                         |
+| Precio unitario    | Línea       | Importe por unidad antes del descuento.                              |
+| Descuento          | Línea       | Reducción de toda la línea, no por unidad.                           |
+| Tratamiento de IGV | Línea       | Cómo tributa la línea y en qué base vienen el precio y el descuento. |
 
-- **Entrada:** solo *hechos comerciales* (qué se vendió, a qué precio, con qué descuento, con qué tratamiento de IGV).
-- **Salida:** todos los importes derivados, calculados una sola vez, con una sola regla de redondeo.
+El precio unitario y el descuento tienen hasta 2 decimales y siempre están en la misma base: ambos incluyen IGV o ninguno lo incluye. La tasa no forma parte de la línea.
 
-La librería **no recibe resultados** (subtotal, IGV, total). Tampoco tiene base de datos: es lógica pura.
+## Tratamientos de IGV
 
-### Alcance de la regla: solo dinero
+| Tratamiento           | Base del precio y del descuento    | `tipo_de_igv` |
+|-----------------------|------------------------------------|--------------:|
+| Gravada, IGV incluido | Incluyen IGV.                      |             1 |
+| Gravada, IGV excluido | No incluyen IGV; el IGV se suma.   |             1 |
+| Exonerada             | No hay IGV que extraer ni agregar. |             8 |
+| Inafecta              | No hay IGV que extraer ni agregar. |             9 |
 
-La librería hace **imposible un estado monetario inconsistente**: precios, descuentos, IGV, subtotales y totales solo se pueden obtener calculándolos desde los hechos. Esto es así porque Nubefact no valida la coherencia de los importes, como se comprobó en producción.
+## Regla de redondeo
 
-La regla **no** se aplica a los datos que no son dinero: identificación, nombre, dirección y email del cliente, serie, número, o la exigencia de RUC para emitir una factura. La librería no los valida: los envía tal cual, Nubefact los valida y su respuesta queda registrada. Un dato de cliente incorrecto no debe impedir que se emita un comprobante.
+1. Dentro de una línea no se redondea ningún valor intermedio.
+2. Cada importe de 2 decimales se redondea una sola vez, mitad hacia arriba.
+3. Los totales del documento no se recalculan: son la suma de las líneas ya redondeadas.
 
----
+La tercera regla responde a la exigencia de Nubefact de que la suma de las líneas coincida con los totales. Con tres líneas de 10.00 con IGV incluido:
 
-## 2. Hechos de entrada
+| Forma                            | Subtotal |  IGV | Total | ¿Coincide con las líneas? |
+|----------------------------------|---------:|-----:|------:|---------------------------|
+| Redondear por línea y sumar      |    25.41 | 4.59 | 30.00 | Sí                        |
+| Redondear al final del documento |    25.42 | 4.58 | 30.00 | No                        |
 
-| Dato | Pertenece a | Significado |
-|---|---|---|
-| Moneda | Documento | En qué moneda están todos los importes. |
-| Tasa de IGV | Documento | Por ejemplo 18 %. Nubefact la recibe una sola vez, en `porcentaje_de_igv`. |
-| Cantidad | Línea | Unidades vendidas. |
-| Precio unitario | Línea | Importe por unidad **antes del descuento**. |
-| Descuento | Línea | Reducción comercial **total de la línea** (no por unidad). |
-| Tratamiento de IGV | Línea | Cuatro opciones, ver abajo. |
+Cada línea, por separado, tiene subtotal 8.47, IGV 1.53 y total 10.00.
 
-El precio unitario y el descuento son importes sin moneda propia y de 2 decimales. Ambos siempre están en la **misma base**: o los dos incluyen IGV, o los dos no lo incluyen. No se pueden mezclar.
+## Fórmulas
 
-### Tratamientos de IGV
+`P` es el precio unitario, `Q` la cantidad, `D` el descuento de la línea y `r` la tasa de IGV.
 
-| Tratamiento | Qué significa | `tipo_de_igv` Nubefact |
-|---|---|---:|
-| Gravada, importes con IGV incluido | El precio y el descuento ya contienen IGV. | 1 |
-| Gravada, importes sin IGV | El precio y el descuento no contienen IGV; el IGV se suma. | 1 |
-| Exonerada | No hay IGV en el importe ni se agrega. | 8 |
-| Inafecta | No hay IGV en el importe ni se agrega. | 9 |
-
-En exonerada e inafecta no existe "con IGV" ni "sin IGV": no hay impuesto que extraer ni agregar.
-
-La tasa nunca forma parte de la línea. La aporta el documento.
-
----
-
-## 3. Regla de redondeo
-
-Toda la librería usa una única regla:
-
-1. **Dentro de una línea no se redondea ningún valor intermedio.** Los cálculos usan precisión decimal completa.
-2. **Cada importe de 2 decimales se redondea una sola vez**, a 2 decimales, con redondeo "mitad hacia arriba".
-3. **Los totales del documento no se recalculan: se suman las líneas ya redondeadas.**
-
-La regla 3 existe porque Nubefact exige que "la suma de cada línea del comprobante" coincida con los totales.
-
-### Por qué no se redondea al final del documento
-
-Con tres líneas de 10.00 con IGV incluido:
-
-| Forma | Subtotal | IGV | Total | ¿Suma las líneas? |
-|---|---:|---:|---:|---|
-| Redondear por línea y sumar | 25.41 | 4.59 | 30.00 | Sí |
-| Redondear al final del documento | 25.42 | 4.58 | 30.00 | No |
-
-Cada línea, por separado: subtotal 8.47, IGV 1.53, total 10.00.
-
----
-
-## 4. Fórmulas
-
-Sea `P` el precio unitario, `Q` la cantidad, `D` el descuento de la línea y `r` la tasa de IGV (por ejemplo 0.18).
-
-### 4.1 Gravada, importes con IGV incluido
+### Gravada, IGV incluido
 
 ```text
-total    = (P × Q) − D                       exacto, 2 decimales
-subtotal = redondeo(total ÷ (1 + r))
+total    = P × Q − D
+subtotal = redondeo((P × Q − D) ÷ (1 + r))
 igv      = total − subtotal
 ```
 
-El total es exactamente lo que se cobró. El IGV se obtiene por diferencia, de modo que `subtotal + igv = total` siempre.
+El total es el importe cobrado, sin redondeo alguno.
 
-### 4.2 Gravada, importes sin IGV
+### Gravada, IGV excluido
 
 ```text
-subtotal = (P × Q) − D
+subtotal = P × Q − D
 igv      = redondeo(subtotal × r)
 total    = subtotal + igv
 ```
 
-### 4.3 Exonerada o inafecta
+### Exonerada e inafecta
 
 ```text
-subtotal = (P × Q) − D
+subtotal = P × Q − D
 igv      = 0
 total    = subtotal
 ```
 
-### 4.4 Documento
+### Documento
 
 ```text
-total_gravada   = suma de subtotal de líneas gravadas
-total_exonerada = suma de subtotal de líneas exoneradas
-total_inafecta  = suma de subtotal de líneas inafectas
-total_igv       = suma de igv de líneas
-total           = suma de total de líneas
+total_gravada   = Σ subtotal de las líneas gravadas
+total_exonerada = Σ subtotal de las líneas exoneradas
+total_inafecta  = Σ subtotal de las líneas inafectas
+total_descuento = Σ descuento de las líneas, antes de IGV
+total_igv       = Σ igv de las líneas
+total           = Σ total de las líneas
 ```
 
----
+## Campos de Nubefact
 
-## 5. Cómo se proyecta a Nubefact
-
-Nubefact define cada línea a partir del **valor unitario sin IGV**. Estas fórmulas son las de la hoja de cálculo oficial de Nubefact:
+Nubefact define cada ítem a partir del valor unitario sin IGV. Las fórmulas de su hoja de cálculo son:
 
 ```text
-valor_unitario  = dato de entrada, sin IGV
-precio_unitario = valor_unitario × (1 + r)     precio ANTES del descuento
-descuento       = descuento de la línea, ANTES de impuestos
+precio_unitario = valor_unitario × (1 + r)
 subtotal        = cantidad × valor_unitario − descuento
 igv             = subtotal × r
 total           = subtotal + igv
 ```
 
-Como nuestros hechos pueden venir con IGV incluido, la librería deriva lo que Nubefact pide:
+La librería obtiene esos campos de los hechos:
 
 ```text
-valor_unitario  = P ÷ (1 + r)                  hasta 10 decimales
-precio_unitario = P                            (con IGV incluido) o P × (1 + r) (sin IGV)
-descuento       = redondeo(D ÷ (1 + r))        (con IGV incluido); D (sin IGV)
+valor_unitario  = P ÷ (1 + r) con IGV incluido; P en los demás casos
+precio_unitario = P con IGV incluido; P × (1 + r) con IGV excluido; P en exonerada e inafecta
+descuento       = redondeo(D ÷ (1 + r)) con IGV incluido; D en los demás casos
 ```
 
-`subtotal`, `igv` y `total` son los de la sección 4.
+`subtotal`, `igv` y `total` son los de la sección anterior. `valor_unitario` y `precio_unitario` corresponden al precio antes del descuento y no se persisten: se recalculan en cada proyección.
 
-`valor_unitario` y `precio_unitario` se envían con hasta 10 decimales. **No se persisten**: se recalculan en cada proyección.
+| Campo                                   | Decimales                                    |
+|-----------------------------------------|----------------------------------------------|
+| `cantidad`                              | Nubefact admite 10; la librería exige entero |
+| `valor_unitario`, `precio_unitario`     | Hasta 10                                     |
+| `descuento`, `subtotal`, `igv`, `total` | 2                                            |
 
-### Límites de decimales de Nubefact
+## Diferencia con la hoja de cálculo de Nubefact
 
-| Campo | Decimales máximos |
-|---|---:|
-| `cantidad` | Nubefact admite 10; la librería exige un entero |
-| `valor_unitario`, `precio_unitario` | 10 |
-| `descuento`, `subtotal`, `igv`, `total` | 2 |
+La hoja de Nubefact encadena valores ya redondeados: calcula el subtotal con el `descuento` de 2 decimales y el IGV con el `subtotal` de 2 decimales. La librería calcula cada importe desde los valores exactos. Cuando no hay nada que redondear, ambos procedimientos dan el mismo resultado; los ejemplos de la hoja se reproducen campo por campo.
 
----
+Con divisiones inexactas pueden diferir en menos de un céntimo. Una cuota de 500.00 con IGV incluido y una beca de 250.00:
 
-## 6. Ejemplos
+| Campo            | Librería       | Fórmula literal de la hoja                      |
+|------------------|----------------|-------------------------------------------------|
+| `valor_unitario` | 423.7288135593 | —                                               |
+| `descuento`      | 211.86         | —                                               |
+| `subtotal`       | 211.86         | 1 × 423.7288135593 − 211.86 = 211.8688 → 211.87 |
+| `igv`            | 38.14          | 211.86 × 0.18 = 38.1348 → 38.13                 |
+| `total`          | 250.00         | 249.99 o 250.01, según el subtotal que se tome  |
 
-Tasa de IGV: 18 %. Moneda: PEN.
+Con las fórmulas literales de la hoja no existe un subtotal que dé un total de 250.00. La librería conserva el total cobrado; el subtotal y el IGV se apartan menos de un céntimo de esas fórmulas.
 
-### 6.1 Gravada, IGV incluido, sin descuento
+## Ejemplos
+
+Tasa de IGV de 18 % y moneda PEN.
+
+### Gravada, IGV incluido, sin descuento
 
 Precio 590.00, cantidad 1.
 
-| Campo | Valor |
-|---|---:|
-| total | 590.00 |
-| subtotal | 500.00 |
-| igv | 90.00 |
-| valor_unitario | 500.0000000000 |
+| Campo           |  Valor |
+|-----------------|-------:|
+| valor_unitario  | 500.00 |
 | precio_unitario | 590.00 |
-| descuento | 0.00 |
+| descuento       |   0.00 |
+| subtotal        | 500.00 |
+| igv             |  90.00 |
+| total           | 590.00 |
 
-### 6.2 Beca del 50 %: gravada, IGV incluido, con descuento
+### Gravada, IGV incluido, con descuento del 50 %
 
-La mensualidad es 200.00 y el alumno debe pagar 100.00. Precio 200.00, descuento 100.00.
+Precio 200.00, descuento 100.00, cantidad 1.
 
-| Campo | Valor |
-|---|---:|
-| total | **100.00** |
-| subtotal | 84.75 |
-| igv | 15.25 |
-| valor_unitario | 169.4915254237 |
-| precio_unitario | 200.00 |
-| descuento (Nubefact) | 84.75 |
+| Campo           |          Valor |
+|-----------------|---------------:|
+| valor_unitario  | 169.4915254237 |
+| precio_unitario |         200.00 |
+| descuento       |          84.75 |
+| subtotal        |          84.75 |
+| igv             |          15.25 |
+| total           |         100.00 |
 
-El descuento de 100.00 con IGV equivale a 84.75 antes de IGV. El alumno paga exactamente 100.00.
-
-### 6.3 El caso que falló en producción
+### Gravada, IGV incluido, con descuento parcial
 
 Precio 534.10, descuento 289.10, cantidad 1.
 
-| Campo | Valor |
-|---|---:|
-| total | 245.00 |
-| subtotal | 207.63 |
-| igv | 37.37 |
-| valor_unitario | 452.6271186441 |
-| precio_unitario | 534.10 |
-| descuento | 245.00 |
+| Campo           |          Valor |
+|-----------------|---------------:|
+| valor_unitario  | 452.6271186441 |
+| precio_unitario |         534.10 |
+| descuento       |         245.00 |
+| subtotal        |         207.63 |
+| igv             |          37.37 |
+| total           |         245.00 |
 
-El `precio_unitario` enviado es el **original** (534.10), nunca el posterior al descuento (245.00). Ese era el error.
+`precio_unitario` es el precio original, no el resultante del descuento.
 
-### 6.4 Cantidad mayor que 1
+### Cantidad mayor que uno
 
-Precio unitario 15.00, cantidad 3, descuento de línea 5.00 (con IGV incluido).
+Precio 15.00, cantidad 3, descuento de línea 5.00, IGV incluido.
 
-| Campo | Valor |
-|---|---:|
-| total | 40.00 (3 × 15.00 − 5.00) |
-| subtotal | 33.90 |
-| igv | 6.10 |
+| Campo          |         Valor |
+|----------------|--------------:|
 | valor_unitario | 12.7118644068 |
-| descuento | 4.24 |
+| descuento      |          4.24 |
+| subtotal       |         33.90 |
+| igv            |          6.10 |
+| total          |         40.00 |
 
-El descuento es de **toda la línea**, no por unidad.
-
-### 6.5 Gravada, importes sin IGV
+### Gravada, IGV excluido
 
 Precio 500.00, descuento 100.00, cantidad 1.
 
-| Campo | Valor |
-|---|---:|
-| subtotal | 400.00 |
-| igv | 72.00 |
-| total | 472.00 |
-| valor_unitario | 500.00 |
+| Campo           |  Valor |
+|-----------------|-------:|
+| valor_unitario  | 500.00 |
 | precio_unitario | 590.00 |
+| descuento       | 100.00 |
+| subtotal        | 400.00 |
+| igv             |  72.00 |
+| total           | 472.00 |
 
-Atención: aquí el cliente paga 472.00, no 400.00. El tratamiento determina qué significan los 100.00 de descuento.
+Con el mismo precio y descuento, el total difiere del caso con IGV incluido: el tratamiento determina la base de ambos importes.
 
-### 6.6 Exonerada e inafecta
+### Exonerada e inafecta
 
 Precio 500.00, descuento 100.00, cantidad 1.
 
-| Campo | Exonerada | Inafecta |
-|---|---:|---:|
-| subtotal | 400.00 | 400.00 |
-| igv | 0.00 | 0.00 |
-| total | 400.00 | 400.00 |
-| `tipo_de_igv` | 8 | 9 |
+| Campo         | Exonerada | Inafecta |
+|---------------|----------:|---------:|
+| subtotal      |    400.00 |   400.00 |
+| igv           |      0.00 |     0.00 |
+| total         |    400.00 |   400.00 |
+| `tipo_de_igv` |         8 |        9 |
 
-### 6.7 Documento con tres líneas
+## Descuentos y becas
 
-Tres líneas de 10.00 con IGV incluido: ver la sección 3. Cada línea es subtotal 8.47, IGV 1.53 y total 10.00. El documento queda en gravada 25.41, IGV 4.59 y total 30.00.
+- Un descuento comercial, incluida una beca expresada como descuento, es una operación onerosa: existen un precio original y un descuento.
+- Un descuento del 100 % produce total 0.00 e IGV 0.00 y sigue siendo una operación onerosa.
+- Una operación gratuita es un concepto distinto, con valor referencial y sin cobro, y no está implementada.
+- El descuento no puede superar `P × Q`.
 
----
+## Fuentes y verificación
 
-## 7. Descuentos y becas
-
-- Un descuento comercial, incluida una beca expresada como descuento, **sigue siendo una operación onerosa**: existe precio original y existe descuento. Ambos se conservan como hechos separados.
-- Una beca del 100 % da total 0.00 e IGV 0.00, pero sigue siendo una operación onerosa con descuento.
-- Una operación **gratuita** es otro concepto (sin cobro y con valor referencial) y no está implementada. No se simula con un descuento del 100 %.
-- El descuento nunca puede superar `P × Q`.
-
----
-
-## 8. Base legal y verificación
-
-| Qué | Fuente | Estado |
-|---|---|---|
-| Campos, decimales y `tipo_de_igv` | Manual de integración JSON de Nubefact v3.0 | Verificado |
-| Fórmulas de línea y cabecera | Hoja "Manual Cálculo JSON TXT" de Nubefact | Verificado |
-| Valor de venta, IGV y precio con IGV por ítem | Guía de elaboración de documentos XML UBL 2.1 de SUNAT | Verificado |
-| Regla de redondeo único por importe | Coincide con las 3 líneas del ejemplo con descuento de la guía de SUNAT | Verificado con ese ejemplo |
-| Tolerancia que aplica Nubefact o SUNAT a un céntimo de diferencia | No está documentada | **Pendiente**: requiere prueba con una cuenta de Nubefact |
-
-La hoja de Nubefact no usa funciones de redondeo y todos sus ejemplos son exactos. La regla de redondeo de este documento se apoya en el ejemplo oficial de SUNAT, no en una definición explícita de Nubefact.
-
----
-
-## 9. Qué hace la librería y qué no
-
-La librería:
-
-- recibe hechos y calcula todos los importes derivados;
-- entrega los resultados como `BigDecimal` con 2 decimales (nunca `float`), y los escribe como números en el JSON de Nubefact;
-- genera la proyección en la estructura que Nubefact espera;
-- no tiene base de datos ni estado externo.
-
-La aplicación que la usa (Savia) es responsable de:
-
-- guardar los hechos y, para lectura, los resultados;
-- guardar la tasa de IGV de cada documento, no leerla de configuración al re-emitir;
-- antes de emitir, recalcular desde los hechos y comparar con lo guardado; si no coinciden, **no enviar**;
-- fijar la fecha de emisión y el correlativo (Nubefact exige que `fecha_de_emision` sea la fecha actual).
+| Regla                                              | Fuente                                                 | Verificación                                                                                                                                                      |
+|----------------------------------------------------|--------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Campos, decimales y `tipo_de_igv`                  | Manual de integración JSON de Nubefact v3.0            | [`KeywordsTest`](../tests/Keywords/KeywordsTest.php), [`LineSchemaTest`](../tests/Actions/Payments/LineSchemaTest.php)                                            |
+| Fórmulas de línea y cabecera                       | Hoja "Manual Cálculo JSON TXT" de Nubefact             | [`NubefactRulesTest`](../tests/Projection/NubefactRulesTest.php), [`NubefactSpreadsheetExamplesTest`](../tests/Projection/NubefactSpreadsheetExamplesTest.php) |
+| Valor de venta, IGV y precio con IGV por ítem      | Guía de elaboración de documentos XML UBL 2.1 de SUNAT | El redondeo único reproduce el ejemplo con descuento de la guía                                                                                                   |
+| Tolerancia ante diferencias de menos de un céntimo | No documentada por Nubefact ni SUNAT                   | Pendiente de confirmar con comprobantes reales                                                                                                                    |
