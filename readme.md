@@ -128,7 +128,7 @@ Una proyección contiene los importes calculados de una línea o de un documento
 - **DocumentProjection**
     - Servicio: [`DocumentProjection`](src/Projection/DocumentProjection.php)
     - `DocumentProjection::of(FinancialTransaction $transaction)` calcula las líneas con la tasa del documento y suma la cabecera.
-    - Expone `lines(): LineProjections`, `totalTaxed()`, `totalExonerated()`, `totalUnaffected()`, `totalDiscounts()`, `totalTaxes()`, `total()`, `transaction()` e `igvRate()`.
+    - Expone `lines(): LineProjections`, `subtotal()` (suma de los subtotales de todas las líneas), `totalTaxed()`, `totalExonerated()`, `totalUnaffected()`, `totalDiscounts()`, `totalTaxes()`, `total()`, `transaction()` e `igvRate()`.
 
 - **LineProjection**
     - Servicio: [`LineProjection`](src/Projection/LineProjection.php)

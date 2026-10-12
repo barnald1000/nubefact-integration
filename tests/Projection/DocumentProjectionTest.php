@@ -44,6 +44,7 @@ final class DocumentProjectionTest extends TestCase
             self::line('50.00', IGVTreatment::unaffected()),
         );
 
+        self::assertSame('630.00', (string) $document->subtotal());
         self::assertSame('500.00', (string) $document->totalTaxed());
         self::assertSame('80.00', (string) $document->totalExonerated());
         self::assertSame('50.00', (string) $document->totalUnaffected());

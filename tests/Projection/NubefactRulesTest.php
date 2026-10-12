@@ -85,6 +85,16 @@ final class NubefactRulesTest extends TestCase
         foreach (array_chunk($lines, 5) as $index => $chunk) {
             $document = DocumentProjection::of(new LinesTransaction(...$chunk));
             $header   = (new HeaderSchema($document))->value();
+
+            $lineSubtotals = BigDecimal::zero();
+
+            foreach ($document->lines()->items() as $line) {
+                $lineSubtotals = $lineSubtotals->plus($line->subtotal());
+            }
+
+            self::assertTrue($document->subtotal()->isEqualTo($lineSubtotals), "document $index: subtotal = Σ subtotal de las líneas");
+            self::assertTrue($document->subtotal()->isEqualTo($document->totalTaxed()->plus($document->totalExonerated())->plus($document->totalUnaffected())), "document $index: subtotal = gravada + exonerada + inafecta");
+            self::assertTrue($document->total()->isEqualTo($document->subtotal()->plus($document->totalTaxes())), "document $index: total = subtotal + igv");
             $items    = array_map(static fn(LineProjection $line): array => (new LineSchema($line))->value(), $document->lines()->items());
 
             $sum = static function (string $field, ?int $type = null) use ($items): BigDecimal {

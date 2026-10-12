@@ -76,6 +76,7 @@ total    = subtotal
 ### Documento
 
 ```text
+subtotal        = Σ subtotal de todas las líneas
 total_gravada   = Σ subtotal de las líneas gravadas
 total_exonerada = Σ subtotal de las líneas exoneradas
 total_inafecta  = Σ subtotal de las líneas inafectas
@@ -83,6 +84,8 @@ total_descuento = Σ descuento de las líneas, antes de IGV
 total_igv       = Σ igv de las líneas
 total           = Σ total de las líneas
 ```
+
+`subtotal` es la suma de los subtotales de todas las líneas; `total_gravada`, `total_exonerada` y `total_inafecta` lo reparten por tipo de IGV, así que siempre suman lo mismo. Nubefact recibe el desglose, no el subtotal. Se cumple `total = subtotal + total_igv`.
 
 ## Campos de Nubefact
 
