@@ -11,16 +11,15 @@ use Savia\NubeFactIntegration\Actions\Payments\HeaderSchema;
 use Savia\NubeFactIntegration\Contracts\Customer;
 use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
 use Savia\NubeFactIntegration\Errors\InvalidIgvRate;
-use Savia\NubeFactIntegration\Keywords\Currency;
 use Savia\NubeFactIntegration\Keywords\DocumentType;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
 use Savia\NubeFactIntegration\Lines\Item;
 use Savia\NubeFactIntegration\Lines\Line;
-use Savia\NubeFactIntegration\Lines\Lines;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
+use Savia\NubeFactIntegration\Operation;
 use Savia\NubeFactIntegration\Projection\DocumentProjection;
 use Savia\NubeFactIntegration\Projection\LineProjection;
 use Savia\NubeFactIntegration\Tests\Support\LinesTransaction;
@@ -123,11 +122,6 @@ final class IgvRateTest extends TestCase
                 return $this->base->type();
             }
 
-            public function igvRate(): IgvRate
-            {
-                return $this->rate;
-            }
-
             public function customer(): Customer
             {
                 return $this->base->customer();
@@ -138,14 +132,9 @@ final class IgvRateTest extends TestCase
                 return $this->base->issueDate();
             }
 
-            public function currency(): Currency
+            public function operation(): Operation
             {
-                return $this->base->currency();
-            }
-
-            public function lines(): Lines
-            {
-                return $this->base->lines();
+                return Operation::of($this->base->operation()->currency(), $this->rate, $this->base->operation()->lines());
             }
         };
     }

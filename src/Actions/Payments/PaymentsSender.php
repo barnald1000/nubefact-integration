@@ -27,7 +27,8 @@ final readonly class PaymentsSender implements Sender
         $document = DocumentProjection::of($transaction);
         $header   = new HeaderSchema($document);
 
-        $lines = $document->lines()
+        $lines = $document->projection()
+                          ->lines()
                           ->map(self::toLineScheme())
                           ->map(self::toLineStructure())
                           ->values();

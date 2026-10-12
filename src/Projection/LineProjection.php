@@ -18,7 +18,8 @@ use Savia\NubeFactIntegration\Lines\Quantity;
  * Line projection
  *
  * The calculated figures of a line. It can only be created by calculating it from a Line, so its figures cannot
- * contradict each other. Calculation is exact and each 2-decimal figure is rounded once.
+ * contradict each other. Calculation is exact and each 2-decimal figure is rounded once. It is created by
+ * OperationProjection with the rate of the line's operation; calling `of()` directly is internal to the library.
  *
  * Amounts that carry IGV are divided by the IGV factor to bring them before IGV, and only taxed lines add IGV on top
  * of the subtotal. With IGV included, the total is exactly what was charged; otherwise it is the rounded subtotal

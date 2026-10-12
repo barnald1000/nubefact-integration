@@ -135,9 +135,10 @@ final class NubefactSpreadsheetExamplesTest extends TestCase
      */
     private static function send(Line ...$lines): array
     {
-        $document = DocumentProjection::of(new LinesTransaction(...$lines));
-        $header   = array_intersect_key((new HeaderSchema($document))->value(), self::MONEY_FIELDS);
-        $items    = array_map(
+        $transaction = new LinesTransaction(...$lines);
+        $document    = $transaction->operation()->project();
+        $header      = array_intersect_key((new HeaderSchema(DocumentProjection::of($transaction)))->value(), self::MONEY_FIELDS);
+        $items       = array_map(
             static fn(LineProjection $line): array => array_intersect_key((new LineSchema($line))->value(), self::ITEM_FIELDS),
             $document->lines()->items(),
         );

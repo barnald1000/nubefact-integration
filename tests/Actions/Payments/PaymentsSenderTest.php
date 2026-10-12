@@ -10,6 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use Savia\NubeFactIntegration\Actions\Payments\PaymentsSender;
 use Savia\NubeFactIntegration\Keywords\Action;
 use Savia\NubeFactIntegration\NubeFactService;
+use Savia\NubeFactIntegration\Tests\Support\CountingTransaction;
 use Savia\NubeFactIntegration\Tests\Support\SingleEntryItemTransaction;
 use Savia\NubeFactIntegration\Tests\TestCase;
 
@@ -53,6 +54,23 @@ final class PaymentsSenderTest extends TestCase
         self::assertSame(100.0, $service->sent['total_gravada']);
         self::assertSame(18.0, $service->sent['total_igv']);
         self::assertSame(118.0, $service->sent['total']);
+    }
+
+    #[Test]
+    public function it_asks_the_transaction_for_its_operation_once_per_send(): void
+    {
+        $service = new class () implements NubeFactService {
+            public function call(Action $action, array $data): ResponseInterface
+            {
+                return new Response(200);
+            }
+        };
+
+        $transaction = new CountingTransaction(new SingleEntryItemTransaction(self::invoiceBillingInfo(), 1, 'F001'));
+
+        (new PaymentsSender($service))->send($transaction);
+
+        self::assertSame(1, $transaction->operationCalls);
     }
 
     private static function invoiceBillingInfo(): array

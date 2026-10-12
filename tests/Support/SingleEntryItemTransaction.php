@@ -24,6 +24,7 @@ use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Lines;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
+use Savia\NubeFactIntegration\Operation;
 
 use function sprintf;
 
@@ -55,11 +56,6 @@ final readonly class SingleEntryItemTransaction implements FinancialTransaction
         return $this->isInvoiceRequired() ? DocumentType::Invoice : DocumentType::Receipt;
     }
 
-    public function igvRate(): IgvRate
-    {
-        return IgvRate::standard();
-    }
-
     public function customer(): Customer
     {
         $isInvoiceRequired = $this->isInvoiceRequired();
@@ -88,21 +84,16 @@ final readonly class SingleEntryItemTransaction implements FinancialTransaction
         return new DateTimeImmutable('now', $limaTimeZone);
     }
 
-    public function currency(): Currency
+    public function operation(): Operation
     {
-        return Currency::PEN;
-    }
-
-    public function lines(): Lines
-    {
-        return new Lines([
+        return Operation::of(Currency::PEN, IgvRate::standard(), new Lines([
             Line::onerous(
                 item     : Item::of($this->code(), $this->description(), Unit::service()),
                 quantity : Quantity::of($this->quantity()),
                 unitPrice: Amount::of(sprintf('%.2f', $this->unitaryPrice())),
                 tax      : IGVTreatment::taxedIncluded(),
             ),
-        ]);
+        ]));
     }
 
     private function code(): string

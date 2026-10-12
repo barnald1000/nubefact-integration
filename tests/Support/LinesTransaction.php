@@ -14,6 +14,7 @@ use Savia\NubeFactIntegration\Keywords\IdentificationType;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Lines;
+use Savia\NubeFactIntegration\Operation;
 
 /**
  * A receipt built from the given lines.
@@ -47,11 +48,6 @@ final readonly class LinesTransaction implements FinancialTransaction
         return DocumentType::Receipt;
     }
 
-    public function igvRate(): IgvRate
-    {
-        return IgvRate::standard();
-    }
-
     public function customer(): Customer
     {
         return new GenericClient('Juan Pérez', null, null, '12345678', IdentificationType::Dni);
@@ -62,13 +58,8 @@ final readonly class LinesTransaction implements FinancialTransaction
         return new DateTimeImmutable('2026-10-11');
     }
 
-    public function currency(): Currency
+    public function operation(): Operation
     {
-        return Currency::PEN;
-    }
-
-    public function lines(): Lines
-    {
-        return $this->lines;
+        return Operation::of(Currency::PEN, IgvRate::standard(), $this->lines);
     }
 }

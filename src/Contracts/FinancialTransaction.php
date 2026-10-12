@@ -9,16 +9,15 @@ declare(strict_types=1);
 namespace Savia\NubeFactIntegration\Contracts;
 
 use DateTimeInterface;
-use Savia\NubeFactIntegration\Keywords\Currency;
 use Savia\NubeFactIntegration\Keywords\DocumentType;
-use Savia\NubeFactIntegration\Keywords\IgvRate;
-use Savia\NubeFactIntegration\Lines\Lines;
+use Savia\NubeFactIntegration\Operation;
 
 /**
  * Interface FinancialTransaction
  *
  * Represents a financial transaction document, such as an invoice, receipt, credit note, or debit note.
- * It only provides facts: identity data and commercial lines. Every amount is calculated by the library.
+ * It provides the identity of the document and the operation it records. Every amount is calculated by the library
+ * from that operation.
  */
 interface FinancialTransaction
 {
@@ -30,13 +29,9 @@ interface FinancialTransaction
 
     public function type(): DocumentType;
 
-    public function igvRate(): IgvRate;
-
     public function customer(): Customer;
 
     public function issueDate(): DateTimeInterface;
 
-    public function currency(): Currency;
-
-    public function lines(): Lines;
+    public function operation(): Operation;
 }

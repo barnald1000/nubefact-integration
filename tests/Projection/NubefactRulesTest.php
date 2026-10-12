@@ -83,8 +83,9 @@ final class NubefactRulesTest extends TestCase
         $lines = array_map(static fn(array $case): Line => $case[0], self::cases());
 
         foreach (array_chunk($lines, 5) as $index => $chunk) {
-            $document = DocumentProjection::of(new LinesTransaction(...$chunk));
-            $header   = (new HeaderSchema($document))->value();
+            $transaction = new LinesTransaction(...$chunk);
+            $document    = $transaction->operation()->project();
+            $header      = (new HeaderSchema(DocumentProjection::of($transaction)))->value();
 
             $lineSubtotals = BigDecimal::zero();
 
@@ -128,16 +129,16 @@ final class NubefactRulesTest extends TestCase
     #[Test]
     public function a_fifty_percent_scholarship_on_a_500_fee_is_sent_as_nubefact_defines_each_field(): void
     {
-        $document = DocumentProjection::of(new LinesTransaction(Line::onerous(
+        $transaction = new LinesTransaction(Line::onerous(
             item     : Item::of('CUOTA-03', 'Cuota marzo', Unit::service()),
             quantity : Quantity::of(1),
             unitPrice: Amount::of('500.00'),
             tax      : IGVTreatment::taxedIncluded(),
             discount : Amount::of('250.00'),
-        )));
+        ));
 
-        $item   = (new LineSchema($document->lines()->items()[0]))->value();
-        $header = (new HeaderSchema($document))->value();
+        $item   = (new LineSchema($transaction->operation()->project()->lines()->items()[0]))->value();
+        $header = (new HeaderSchema(DocumentProjection::of($transaction)))->value();
 
         self::assertSame(423.7288135593, $item['valor_unitario'], 'valor_unitario: sin IGV = 500 / 1.18');
         self::assertSame(500.0, $item['precio_unitario'], 'precio_unitario: con IGV, antes del descuento');
