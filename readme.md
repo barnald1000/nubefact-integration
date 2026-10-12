@@ -135,7 +135,7 @@ Una proyección contiene los importes calculados de una línea o de un documento
     - `LineProjection::of(Line $line, IgvRate $igvRate)` calcula una línea.
     - Expone `subtotal()`, `totalTaxes()`, `total()`, `totalDiscounts()` (antes de IGV), `unitValue()`, `unitPrice()`, `igvType()`, `item()` y `quantity()`.
 
-Ambas implementan [`Totalizable`](src/Contracts/Totalizable.php): `total()`, `totalDiscounts()` y `totalTaxes()`.
+Ambas implementan [`Totalizable`](src/Contracts/Totalizable.php): `subtotal()`, `total()`, `totalDiscounts()` y `totalTaxes()`.
 
 Los importes son `Brick\Math\BigDecimal` con 2 decimales. Se guardan con `(string) $importe` en columnas `DECIMAL(10,2)`, nunca como `float`.
 

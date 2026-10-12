@@ -17,16 +17,16 @@ use Brick\Math\BigDecimal;
  * This interface is designed for use in financial contexts where detailed breakdowns
  * of totals are required, such as invoices, receipts, or other transaction records.
  *
- * It only exposes the totals that a line and a document share. The net amount is left out on purpose:
- * a line has one subtotal, while a document splits it into taxed, exonerated and unaffected bases.
- *
  * Key responsibilities of this interface:
+ * - Provide the **subtotal**, the amount before taxes: a line's sale value, or the sum of every line subtotal.
  * - Provide the **discount total**, detailing the cumulative value of all discounts.
  * - Provide the **tax total**, showing the sum of all applicable taxes.
  * - Provide the **total**, representing the final payable amount after calculations.
  */
 interface Totalizable
 {
+    public function subtotal(): BigDecimal;
+
     public function total(): BigDecimal;
 
     public function totalDiscounts(): BigDecimal;
