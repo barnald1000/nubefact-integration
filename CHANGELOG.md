@@ -2,6 +2,21 @@
 
 Todos los cambios relevantes de esta librería se documentan aquí. El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado sigue [Semantic Versioning](https://semver.org/lang/es/). Las versiones anteriores a la 0.5.0 no tienen registro en este archivo.
 
+## [0.7.0] - 2026-10-12
+
+El ítem pasa a ser un contrato que implementa la aplicación y entrega su propia línea. Cada resultado del cálculo trae el ítem del que se calculó, de modo que la aplicación no necesita emparejar resultados con sus ítems por posición.
+
+### Cambios que rompen compatibilidad
+
+- `Item` pasa a ser un contrato (`Contracts\Item`) con `code()`, `description()`, `unit()`, `sunatCode()` y `line(): Line`. `Item::of()` se elimina.
+- `Line::onerous()` ya no recibe el ítem: solo cantidad, precio unitario, tratamiento de IGV y descuento. `Line::item()` se elimina.
+- `Lines` se reemplaza por `Items`, la colección de ítems que recibe `Operation::of()`. `Operation::lines()` pasa a ser `Operation::items()`.
+
+### Cambiado
+
+- `LineProjection::item()` devuelve el ítem de la aplicación del que se calculó.
+- La librería lee la línea de cada ítem una sola vez por cálculo. Las validaciones de `Line` se ejecutan cuando la aplicación la crea en `line()`.
+
 ## [0.6.0] - 2026-10-12
 
 La moneda, la tasa de IGV y las líneas pasan a formar una operación, que se calcula como un todo y puede proyectarse antes de que exista el documento. Todas las líneas se calculan con la misma tasa que se envía en la cabecera.
