@@ -7,28 +7,26 @@ namespace Savia\NubeFactIntegration\Tests\Lines;
 use PHPUnit\Framework\Attributes\Test;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
-use Savia\NubeFactIntegration\Lines\Item;
-use Savia\NubeFactIntegration\Lines\Line;
-use Savia\NubeFactIntegration\Lines\Lines;
+use Savia\NubeFactIntegration\Lines\Items;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
+use Savia\NubeFactIntegration\Tests\Support\BillableItem;
 use Savia\NubeFactIntegration\Tests\TestCase;
 use stdClass;
 use Vaened\Support\Types\InvalidSafelistItem;
 
-final class LinesTest extends TestCase
+final class ItemsTest extends TestCase
 {
     #[Test]
     public function it_holds_lines(): void
     {
-        $line = Line::onerous(
-            item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service()),
+        $line = BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service())->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('590.00'),
             tax      : IGVTreatment::taxedIncluded(),
         );
 
-        self::assertSame([$line], (new Lines([$line]))->items());
+        self::assertSame([$line], (new Items([$line]))->items());
     }
 
     #[Test]
@@ -36,6 +34,6 @@ final class LinesTest extends TestCase
     {
         $this->expectException(InvalidSafelistItem::class);
 
-        new Lines([new stdClass()]);
+        new Items([new stdClass()]);
     }
 }

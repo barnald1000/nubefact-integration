@@ -7,7 +7,7 @@ namespace Savia\NubeFactIntegration\Tests\Responses;
 use PHPUnit\Framework\Attributes\Test;
 use Savia\NubeFactIntegration\Responses\Error;
 use Savia\NubeFactIntegration\Responses\Success;
-use Savia\NubeFactIntegration\Tests\Support\LinesTransaction;
+use Savia\NubeFactIntegration\Tests\Support\ItemsTransaction;
 use Savia\NubeFactIntegration\Tests\TestCase;
 
 final class ResponsesTest extends TestCase
@@ -15,7 +15,7 @@ final class ResponsesTest extends TestCase
     #[Test]
     public function a_success_reads_the_nubefact_response_fields(): void
     {
-        $success = new Success(new LinesTransaction(), [
+        $success = new Success(new ItemsTransaction(), [
             'aceptada_por_sunat'    => false,
             'cadena_para_codigo_qr' => '20600695771 | 01 | FFF1 | 000001',
             'codigo_hash'           => 'xMLFMnbgp1/bHEy572RKRTE9hPY=',
@@ -37,7 +37,7 @@ final class ResponsesTest extends TestCase
     #[Test]
     public function an_error_reads_the_nubefact_error_fields(): void
     {
-        $error = new Error(new LinesTransaction(), 'Client error: 400 Bad Request', ['errors' => ['Serie inválida'], 'codigo' => '21']);
+        $error = new Error(new ItemsTransaction(), 'Client error: 400 Bad Request', ['errors' => ['Serie inválida'], 'codigo' => '21']);
 
         self::assertFalse($error->isAccept());
         self::assertSame(21, $error->code());
@@ -49,7 +49,7 @@ final class ResponsesTest extends TestCase
     #[Test]
     public function an_error_without_a_body_has_no_code_nor_messages(): void
     {
-        $error = new Error(new LinesTransaction(), 'Connection refused', null);
+        $error = new Error(new ItemsTransaction(), 'Connection refused', null);
 
         self::assertSame(0, $error->code());
         self::assertNull($error->messages());

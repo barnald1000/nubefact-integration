@@ -13,13 +13,12 @@ use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Keywords\IGVType;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
-use Savia\NubeFactIntegration\Lines\Item;
-use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
 use Savia\NubeFactIntegration\Projection\DocumentProjection;
 use Savia\NubeFactIntegration\Projection\LineProjection;
-use Savia\NubeFactIntegration\Tests\Support\LinesTransaction;
+use Savia\NubeFactIntegration\Tests\Support\BillableItem;
+use Savia\NubeFactIntegration\Tests\Support\ItemsTransaction;
 use Savia\NubeFactIntegration\Tests\TestCase;
 
 use function array_chunk;
@@ -80,10 +79,10 @@ final class NubefactRulesTest extends TestCase
     #[Test]
     public function the_header_is_always_the_sum_of_the_items_in_the_payload(): void
     {
-        $lines = array_map(static fn(array $case): Line => $case[0], self::cases());
+        $lines = array_map(static fn(array $case): BillableItem => $case[0], self::cases());
 
         foreach (array_chunk($lines, 5) as $index => $chunk) {
-            $transaction = new LinesTransaction(...$chunk);
+            $transaction = new ItemsTransaction(...$chunk);
             $document    = $transaction->operation()->project();
             $header      = (new HeaderSchema(DocumentProjection::of($transaction)))->value();
 
@@ -129,8 +128,7 @@ final class NubefactRulesTest extends TestCase
     #[Test]
     public function a_fifty_percent_scholarship_on_a_500_fee_is_sent_as_nubefact_defines_each_field(): void
     {
-        $transaction = new LinesTransaction(Line::onerous(
-            item     : Item::of('CUOTA-03', 'Cuota marzo', Unit::service()),
+        $transaction = new ItemsTransaction(BillableItem::of('CUOTA-03', 'Cuota marzo', Unit::service())->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('500.00'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -164,8 +162,7 @@ final class NubefactRulesTest extends TestCase
     #[Test]
     public function the_discount_belongs_to_the_whole_line_not_to_each_unit(): void
     {
-        $projection = LineProjection::of(Line::onerous(
-            item     : self::item(),
+        $projection = LineProjection::of(self::item()->sold(
             quantity : Quantity::of(3),
             unitPrice: Amount::of('15.00'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -177,7 +174,7 @@ final class NubefactRulesTest extends TestCase
     }
 
     /**
-     * @return array<string, array{Line, IGVTreatment, string, int, BigDecimal}>
+     * @return array<string, array{BillableItem, IGVTreatment, string, int, BigDecimal}>
      */
     private static function cases(): array
     {
@@ -197,8 +194,7 @@ final class NubefactRulesTest extends TestCase
 
                     foreach (['none' => null, 'third' => $gross->dividedBy(3, 2, RoundingMode::Down), 'full' => $gross] as $kind => $discount) {
                         $cases["$name, $price × $quantity, discount $kind"] = [
-                            Line::onerous(
-                                item     : self::item(),
+                            self::item()->sold(
                                 quantity : Quantity::of($quantity),
                                 unitPrice: Amount::of($price),
                                 tax      : $treatment,
@@ -219,8 +215,7 @@ final class NubefactRulesTest extends TestCase
 
     private static function excluded(string $price): LineProjection
     {
-        return LineProjection::of(Line::onerous(
-            item     : self::item(),
+        return LineProjection::of(self::item()->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of($price),
             tax      : IGVTreatment::taxedExcluded(),
@@ -240,8 +235,8 @@ final class NubefactRulesTest extends TestCase
         );
     }
 
-    private static function item(): Item
+    private static function item(): BillableItem
     {
-        return Item::of('MAT-001', 'Matrícula 2026', Unit::service());
+        return BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service());
     }
 }

@@ -15,14 +15,13 @@ use Savia\NubeFactIntegration\Keywords\DocumentType;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
-use Savia\NubeFactIntegration\Lines\Item;
-use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
 use Savia\NubeFactIntegration\Operation;
 use Savia\NubeFactIntegration\Projection\DocumentProjection;
 use Savia\NubeFactIntegration\Projection\LineProjection;
-use Savia\NubeFactIntegration\Tests\Support\LinesTransaction;
+use Savia\NubeFactIntegration\Tests\Support\BillableItem;
+use Savia\NubeFactIntegration\Tests\Support\ItemsTransaction;
 use Savia\NubeFactIntegration\Tests\TestCase;
 
 final class IgvRateTest extends TestCase
@@ -92,14 +91,14 @@ final class IgvRateTest extends TestCase
         self::assertSame(110.0, $header['total']);
     }
 
-    private static function line(string $price, IGVTreatment $treatment): Line
+    private static function line(string $price, IGVTreatment $treatment): BillableItem
     {
-        return Line::onerous(Item::of('MAT-001', 'Matrícula 2026', Unit::service()), Quantity::of(1), Amount::of($price), $treatment);
+        return BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service())->sold(Quantity::of(1), Amount::of($price), $treatment);
     }
 
-    private static function transactionAt(IgvRate $rate, Line ...$lines): FinancialTransaction
+    private static function transactionAt(IgvRate $rate, BillableItem ...$lines): FinancialTransaction
     {
-        return new class (new LinesTransaction(...$lines), $rate) implements FinancialTransaction {
+        return new class (new ItemsTransaction(...$lines), $rate) implements FinancialTransaction {
             public function __construct(private readonly FinancialTransaction $base, private readonly IgvRate $rate) {}
 
             public function id(): string
@@ -134,7 +133,7 @@ final class IgvRateTest extends TestCase
 
             public function operation(): Operation
             {
-                return Operation::of($this->base->operation()->currency(), $this->rate, $this->base->operation()->lines());
+                return Operation::of($this->base->operation()->currency(), $this->rate, $this->base->operation()->items());
             }
         };
     }

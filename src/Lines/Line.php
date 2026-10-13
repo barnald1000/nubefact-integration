@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Savia\NubeFactIntegration\Lines;
 
 /**
- * One onerous Nubefact item. Its provider fields are derived by LineProjection.
+ * The amounts of one onerous item: quantity, unit price, IGV treatment and discount. Its provider fields are derived
+ * by LineProjection.
  */
 final readonly class Line
 {
     private function __construct(
-        private Item $item,
         private Quantity $quantity,
         private Amount $unitPrice,
         private IGVTreatment $tax,
@@ -18,7 +18,6 @@ final readonly class Line
     ) {}
 
     public static function onerous(
-        Item $item,
         Quantity $quantity,
         Amount $unitPrice,
         IGVTreatment $tax,
@@ -32,12 +31,7 @@ final readonly class Line
             throw new InvalidLine('El descuento no puede exceder el importe original de la línea.');
         }
 
-        return new self($item, $quantity, $unitPrice, $tax, $discount);
-    }
-
-    public function item(): Item
-    {
-        return $this->item;
+        return new self($quantity, $unitPrice, $tax, $discount);
     }
 
     public function quantity(): Quantity

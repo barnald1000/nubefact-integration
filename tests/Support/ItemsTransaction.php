@@ -8,24 +8,24 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Savia\NubeFactIntegration\Contracts\Customer;
 use Savia\NubeFactIntegration\Contracts\FinancialTransaction;
+use Savia\NubeFactIntegration\Contracts\Item;
 use Savia\NubeFactIntegration\Keywords\Currency;
 use Savia\NubeFactIntegration\Keywords\DocumentType;
 use Savia\NubeFactIntegration\Keywords\IdentificationType;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
-use Savia\NubeFactIntegration\Lines\Line;
-use Savia\NubeFactIntegration\Lines\Lines;
+use Savia\NubeFactIntegration\Lines\Items;
 use Savia\NubeFactIntegration\Operation;
 
 /**
- * A receipt built from the given lines.
+ * A receipt built from the given items.
  */
-final readonly class LinesTransaction implements FinancialTransaction
+final readonly class ItemsTransaction implements FinancialTransaction
 {
-    private Lines $lines;
+    private Items $items;
 
-    public function __construct(Line ...$lines)
+    public function __construct(Item ...$items)
     {
-        $this->lines = new Lines($lines);
+        $this->items = new Items($items);
     }
 
     public function id(): string
@@ -60,6 +60,6 @@ final readonly class LinesTransaction implements FinancialTransaction
 
     public function operation(): Operation
     {
-        return Operation::of(Currency::PEN, IgvRate::standard(), $this->lines);
+        return Operation::of(Currency::PEN, IgvRate::standard(), $this->items);
     }
 }

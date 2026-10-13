@@ -7,19 +7,18 @@ namespace Savia\NubeFactIntegration\Projection;
 use Brick\Math\BigDecimal;
 use Brick\Math\BigRational;
 use Brick\Math\RoundingMode;
+use Savia\NubeFactIntegration\Contracts\Item;
 use Savia\NubeFactIntegration\Contracts\Totalizable;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Keywords\IGVType;
-use Savia\NubeFactIntegration\Lines\Item;
-use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Quantity;
 
 /**
  * Line projection
  *
- * The calculated figures of a line. It can only be created by calculating it from a Line, so its figures cannot
- * contradict each other. Calculation is exact and each 2-decimal figure is rounded once. It is created by
- * OperationProjection with the rate of the line's operation; calling `of()` directly is internal to the library.
+ * The calculated figures of an item. It can only be created by calculating them from the item's line, so its figures
+ * cannot contradict each other, and it keeps the same item it was calculated from. Calculation is exact and each 2-decimal figure is rounded once. It is created by
+ * OperationProjection with the rate of the item's operation; calling `of()` directly is internal to the library.
  *
  * Amounts that carry IGV are divided by the IGV factor to bring them before IGV, and only taxed lines add IGV on top
  * of the subtotal. With IGV included, the total is exactly what was charged; otherwise it is the rounded subtotal
@@ -44,8 +43,9 @@ final readonly class LineProjection implements Totalizable
         private BigDecimal $total,
     ) {}
 
-    public static function of(Line $line, IgvRate $igvRate): self
+    public static function of(Item $item, IgvRate $igvRate): self
     {
+        $line      = $item->line();
         $treatment = $line->tax();
         $quantity  = $line->quantity()->value();
         $price     = $line->unitPrice()->value();
@@ -65,7 +65,7 @@ final readonly class LineProjection implements Totalizable
             : $roundedSubtotal->plus($roundedTax);
 
         return new self(
-            $line->item(),
+            $item,
             $line->quantity(),
             $unitValue->toScale(10, RoundingMode::HalfUp),
             $unitValue->multipliedBy(BigDecimal::one()->plus($rate))->toScale(10, RoundingMode::HalfUp),

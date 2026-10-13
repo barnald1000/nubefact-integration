@@ -6,14 +6,14 @@ namespace Savia\NubeFactIntegration\Tests\Actions\Payments;
 
 use PHPUnit\Framework\Attributes\Test;
 use Savia\NubeFactIntegration\Actions\Payments\LineSchema;
+use Savia\NubeFactIntegration\Contracts\Item;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
-use Savia\NubeFactIntegration\Lines\Item;
-use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
 use Savia\NubeFactIntegration\Projection\LineProjection;
+use Savia\NubeFactIntegration\Tests\Support\BillableItem;
 use Savia\NubeFactIntegration\Tests\TestCase;
 
 final class LineSchemaTest extends TestCase
@@ -21,8 +21,7 @@ final class LineSchemaTest extends TestCase
     #[Test]
     public function it_translates_a_calculated_line_into_a_nubefact_item(): void
     {
-        $schema = self::schema(Line::onerous(
-            item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service()),
+        $schema = self::schema(BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service())->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('534.10'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -47,8 +46,7 @@ final class LineSchemaTest extends TestCase
     #[Test]
     public function it_sends_a_zero_discount_when_the_line_has_none(): void
     {
-        $schema = self::schema(Line::onerous(
-            item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service()),
+        $schema = self::schema(BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service())->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('590.00'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -60,8 +58,7 @@ final class LineSchemaTest extends TestCase
     #[Test]
     public function it_keeps_the_ten_decimals_of_the_unit_value(): void
     {
-        $schema = self::schema(Line::onerous(
-            item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service()),
+        $schema = self::schema(BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service())->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('200.00'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -76,8 +73,7 @@ final class LineSchemaTest extends TestCase
     #[Test]
     public function it_sends_the_sunat_product_code_only_when_present(): void
     {
-        $withCode = self::schema(Line::onerous(
-            item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service(), '86111604'),
+        $withCode = self::schema(BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service(), '86111604')->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('590.00'),
             tax      : IGVTreatment::exonerated(),
@@ -90,8 +86,7 @@ final class LineSchemaTest extends TestCase
     #[Test]
     public function it_sends_a_missing_internal_code_as_null(): void
     {
-        $schema = self::schema(Line::onerous(
-            item     : Item::of(null, 'Matrícula 2026', Unit::product()),
+        $schema = self::schema(BillableItem::of(null, 'Matrícula 2026', Unit::product())->sold(
             quantity : Quantity::of(2),
             unitPrice: Amount::of('590.00'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -110,8 +105,7 @@ final class LineSchemaTest extends TestCase
         $types = [];
 
         foreach ([IGVTreatment::taxedIncluded(), IGVTreatment::taxedExcluded(), IGVTreatment::exonerated(), IGVTreatment::unaffected()] as $treatment) {
-            $types[] = self::schema(Line::onerous(
-                item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service()),
+            $types[] = self::schema(BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service())->sold(
                 quantity : Quantity::of(1),
                 unitPrice: Amount::of('100.00'),
                 tax      : $treatment,
@@ -121,8 +115,8 @@ final class LineSchemaTest extends TestCase
         self::assertSame([1, 1, 8, 9], $types);
     }
 
-    private static function schema(Line $line): array
+    private static function schema(Item $item): array
     {
-        return (new LineSchema(LineProjection::of($line, IgvRate::standard())))->value();
+        return (new LineSchema(LineProjection::of($item, IgvRate::standard())))->value();
     }
 }

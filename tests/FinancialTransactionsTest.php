@@ -6,7 +6,7 @@ namespace Savia\NubeFactIntegration\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use Savia\NubeFactIntegration\FinancialTransactions;
-use Savia\NubeFactIntegration\Tests\Support\LinesTransaction;
+use Savia\NubeFactIntegration\Tests\Support\ItemsTransaction;
 use stdClass;
 use Vaened\Support\Types\InvalidSafelistItem;
 
@@ -15,7 +15,7 @@ final class FinancialTransactionsTest extends TestCase
     #[Test]
     public function it_holds_financial_transactions(): void
     {
-        $transaction = new LinesTransaction();
+        $transaction = new ItemsTransaction();
 
         self::assertSame([$transaction], FinancialTransactions::from([$transaction])->items());
     }

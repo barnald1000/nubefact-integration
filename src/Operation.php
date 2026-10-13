@@ -6,14 +6,14 @@ namespace Savia\NubeFactIntegration;
 
 use Savia\NubeFactIntegration\Keywords\Currency;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
-use Savia\NubeFactIntegration\Lines\Lines;
+use Savia\NubeFactIntegration\Lines\Items;
 use Savia\NubeFactIntegration\Projection\OperationProjection;
 
 /**
  * Operation
  *
- * What a document records: its lines, the currency of their amounts and the IGV rate that applies to all of them.
- * The lines and the rate only exist together, so a line is always calculated with the rate of its own operation.
+ * What a document records: its items, the currency of their amounts and the IGV rate that applies to all of them.
+ * The items and the rate only exist together, so an item is always calculated with the rate of its own operation.
  * An operation exists before its document, so its amounts can be calculated before the document is created.
  */
 final readonly class Operation
@@ -21,12 +21,12 @@ final readonly class Operation
     private function __construct(
         private Currency $currency,
         private IgvRate $igvRate,
-        private Lines $lines,
+        private Items $items,
     ) {}
 
-    public static function of(Currency $currency, IgvRate $igvRate, Lines $lines): self
+    public static function of(Currency $currency, IgvRate $igvRate, Items $items): self
     {
-        return new self($currency, $igvRate, $lines);
+        return new self($currency, $igvRate, $items);
     }
 
     public function currency(): Currency
@@ -39,9 +39,9 @@ final readonly class Operation
         return $this->igvRate;
     }
 
-    public function lines(): Lines
+    public function items(): Items
     {
-        return $this->lines;
+        return $this->items;
     }
 
     public function project(): OperationProjection

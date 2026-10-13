@@ -6,9 +6,9 @@ namespace Savia\NubeFactIntegration\Projection;
 
 use Brick\Math\BigDecimal;
 use LogicException;
+use Savia\NubeFactIntegration\Contracts\Item;
 use Savia\NubeFactIntegration\Contracts\Totalizable;
 use Savia\NubeFactIntegration\Keywords\IGVType;
-use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Operation;
 
 /**
@@ -36,7 +36,7 @@ final readonly class OperationProjection implements Totalizable
     {
         $igvRate = $operation->igvRate();
         $lines   = new LineProjections(
-            $operation->lines()->map(static fn(Line $line) => LineProjection::of($line, $igvRate))->values(),
+            $operation->items()->map(static fn(Item $item) => LineProjection::of($item, $igvRate))->values(),
         );
 
         $subtotal = $taxed = $exonerated = $unaffected = $discount = $igv = $total = BigDecimal::zero()->toScale(2);

@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace Savia\NubeFactIntegration\Tests\Projection;
 
 use PHPUnit\Framework\Attributes\Test;
+use Savia\NubeFactIntegration\Contracts\Item;
 use Savia\NubeFactIntegration\Keywords\Currency;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
-use Savia\NubeFactIntegration\Lines\Item;
-use Savia\NubeFactIntegration\Lines\Line;
-use Savia\NubeFactIntegration\Lines\Lines;
+use Savia\NubeFactIntegration\Lines\Items;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
 use Savia\NubeFactIntegration\Operation;
 use Savia\NubeFactIntegration\Projection\OperationProjection;
+use Savia\NubeFactIntegration\Tests\Support\BillableItem;
+use Savia\NubeFactIntegration\Tests\Support\CountingItem;
 use Savia\NubeFactIntegration\Tests\TestCase;
 
 use function intdiv;
@@ -23,6 +24,30 @@ use function sprintf;
 
 final class OperationProjectionTest extends TestCase
 {
+    #[Test]
+    public function each_result_keeps_the_item_it_was_calculated_from(): void
+    {
+        $fee  = self::line('500.00', IGVTreatment::taxedIncluded(), '250.00');
+        $book = self::line('80.00', IGVTreatment::exonerated());
+
+        [$feeResult, $bookResult] = self::project($fee, $book)->lines()->items();
+
+        self::assertSame($fee, $feeResult->item());
+        self::assertSame('250.00', (string) $feeResult->total());
+        self::assertSame($book, $bookResult->item());
+        self::assertSame('80.00', (string) $bookResult->total());
+    }
+
+    #[Test]
+    public function it_reads_the_line_of_each_item_once(): void
+    {
+        $item = new CountingItem(self::line('118.00', IGVTreatment::taxedIncluded()));
+
+        self::project($item);
+
+        self::assertSame(1, $item->lineCalls);
+    }
+
     #[Test]
     public function it_adds_the_rounded_lines_instead_of_rounding_the_document(): void
     {
@@ -105,7 +130,7 @@ final class OperationProjectionTest extends TestCase
     #[Test]
     public function every_line_is_calculated_with_the_rate_of_its_operation(): void
     {
-        $operation = Operation::of(Currency::PEN, IgvRate::of(10), new Lines([self::line('110.00', IGVTreatment::taxedIncluded())]));
+        $operation = Operation::of(Currency::PEN, IgvRate::of(10), new Items([self::line('110.00', IGVTreatment::taxedIncluded())]));
         $document  = $operation->project();
 
         self::assertSame('100.00', (string) $document->lines()->items()[0]->subtotal());
@@ -124,15 +149,14 @@ final class OperationProjectionTest extends TestCase
         self::assertSame('0.00', (string) $document->totalTaxed());
     }
 
-    private static function project(Line ...$lines): OperationProjection
+    private static function project(Item ...$items): OperationProjection
     {
-        return Operation::of(Currency::PEN, IgvRate::standard(), new Lines($lines))->project();
+        return Operation::of(Currency::PEN, IgvRate::standard(), new Items($items))->project();
     }
 
-    private static function line(string $price, IGVTreatment $treatment, ?string $discount = null): Line
+    private static function line(string $price, IGVTreatment $treatment, ?string $discount = null): BillableItem
     {
-        return Line::onerous(
-            item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service()),
+        return BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service())->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of($price),
             tax      : $treatment,

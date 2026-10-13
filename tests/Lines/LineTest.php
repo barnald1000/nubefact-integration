@@ -7,16 +7,17 @@ namespace Savia\NubeFactIntegration\Tests\Lines;
 use Brick\Math\BigDecimal;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Savia\NubeFactIntegration\Contracts\Item;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Keywords\IGVType;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
 use Savia\NubeFactIntegration\Lines\InvalidLine;
-use Savia\NubeFactIntegration\Lines\Item;
 use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
 use Savia\NubeFactIntegration\Projection\LineProjection;
+use Savia\NubeFactIntegration\Tests\Support\BillableItem;
 use Savia\NubeFactIntegration\Tests\TestCase;
 
 final class LineTest extends TestCase
@@ -42,8 +43,7 @@ final class LineTest extends TestCase
     #[Test]
     public function it_projects_a_taxed_line_without_a_discount(): void
     {
-        $projection = $this->project(Line::onerous(
-            item     : self::item(),
+        $projection = $this->project(self::item()->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('590.00'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -58,8 +58,7 @@ final class LineTest extends TestCase
     #[Test]
     public function it_projects_a_taxed_line_from_original_commercial_facts(): void
     {
-        $projection = $this->project(Line::onerous(
-            item     : self::item(),
+        $projection = $this->project(self::item()->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('534.10'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -78,8 +77,7 @@ final class LineTest extends TestCase
     #[Test]
     public function it_accepts_a_full_discount_on_a_taxed_line(): void
     {
-        $projection = $this->project(Line::onerous(
-            item     : self::item(),
+        $projection = $this->project(self::item()->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('590.00'),
             discount : Amount::of('590.00'),
@@ -97,8 +95,7 @@ final class LineTest extends TestCase
     #[DataProvider('nonTaxedTreatments')]
     public function it_projects_non_taxed_onerous_lines(IGVTreatment $treatment, IGVType $type): void
     {
-        $projection = $this->project(Line::onerous(
-            item     : self::item(),
+        $projection = $this->project(self::item()->sold(
             quantity : Quantity::of(2),
             unitPrice: Amount::of('50.00'),
             discount : Amount::of('5.00'),
@@ -118,8 +115,7 @@ final class LineTest extends TestCase
     #[DataProvider('nonTaxedTreatmentValues')]
     public function it_accepts_a_full_discount_on_non_taxed_onerous_lines(IGVTreatment $treatment): void
     {
-        $projection = $this->project(Line::onerous(
-            item     : self::item(),
+        $projection = $this->project(self::item()->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('100.00'),
             discount : Amount::of('100.00'),
@@ -140,8 +136,7 @@ final class LineTest extends TestCase
         array $calculatedUnitAmounts,
         array $results,
     ): void {
-        $projection = $this->project(Line::onerous(
-            item     : self::item(),
+        $projection = $this->project(self::item()->sold(
             quantity : Quantity::of($quantity),
             unitPrice: Amount::of($unitPrice),
             tax      : IGVTreatment::taxedExcluded(),
@@ -163,8 +158,7 @@ final class LineTest extends TestCase
     #[Test]
     public function it_accepts_a_full_discount_on_a_taxed_line_with_amounts_before_igv(): void
     {
-        $projection = $this->project(Line::onerous(
-            item     : self::item(),
+        $projection = $this->project(self::item()->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('100.00'),
             tax      : IGVTreatment::taxedExcluded(),
@@ -195,8 +189,7 @@ final class LineTest extends TestCase
     {
         $this->expectException(InvalidLine::class);
 
-        Line::onerous(
-            item     : self::item(),
+        self::item()->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('0.00'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -208,8 +201,7 @@ final class LineTest extends TestCase
     {
         $this->expectException(InvalidLine::class);
 
-        Line::onerous(
-            item     : self::item(),
+        self::item()->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('10.00'),
             discount : Amount::of('10.01'),
@@ -220,20 +212,18 @@ final class LineTest extends TestCase
     #[Test]
     public function it_compares_the_discount_with_the_whole_line_amount_not_with_one_unit(): void
     {
-        $line = Line::onerous(
-            item     : self::item(),
+        $line = self::item()->sold(
             quantity : Quantity::of(3),
             unitPrice: Amount::of('10.00'),
             tax      : IGVTreatment::taxedIncluded(),
             discount : Amount::of('30.00'),
         );
 
-        self::assertSame('30.00', (string) $line->discount()?->value());
+        self::assertSame('30.00', (string) $line->line()->discount()?->value());
 
         $this->expectException(InvalidLine::class);
 
-        Line::onerous(
-            item     : self::item(),
+        self::item()->sold(
             quantity : Quantity::of(3),
             unitPrice: Amount::of('10.00'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -244,13 +234,11 @@ final class LineTest extends TestCase
     #[Test]
     public function it_exposes_the_facts_it_was_built_from(): void
     {
-        $item     = self::item();
         $quantity = Quantity::of(2);
         $price    = Amount::of('50.00');
         $tax      = IGVTreatment::exonerated();
-        $line     = Line::onerous($item, $quantity, $price, $tax);
+        $line     = Line::onerous($quantity, $price, $tax);
 
-        self::assertSame($item, $line->item());
         self::assertSame($quantity, $line->quantity());
         self::assertSame($price, $line->unitPrice());
         self::assertSame($tax, $line->tax());
@@ -263,9 +251,9 @@ final class LineTest extends TestCase
         self::assertSame('18.00', (string) IgvRate::standard()->percentage());
     }
 
-    private function project(Line $line): LineProjection
+    private function project(Item $item): LineProjection
     {
-        return LineProjection::of($line, IgvRate::standard());
+        return LineProjection::of($item, IgvRate::standard());
     }
 
     private static function assertAmount(string $expected, ?BigDecimal $actual): void
@@ -274,8 +262,8 @@ final class LineTest extends TestCase
         self::assertTrue($actual->isEqualTo($expected), "Expected $expected, got $actual.");
     }
 
-    private static function item(): Item
+    private static function item(): BillableItem
     {
-        return Item::of('MAT-001', 'Matrícula 2026', Unit::service());
+        return BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service());
     }
 }

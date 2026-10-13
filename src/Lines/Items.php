@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Savia\NubeFactIntegration\Lines;
 
+use Savia\NubeFactIntegration\Contracts\Item;
 use Vaened\Support\Types\SecureList;
 
-final class Lines extends SecureList
+final class Items extends SecureList
 {
     public static function type(): string
     {
-        return Line::class;
+        return Item::class;
     }
 }

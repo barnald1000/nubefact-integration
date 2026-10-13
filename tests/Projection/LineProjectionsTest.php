@@ -8,12 +8,11 @@ use PHPUnit\Framework\Attributes\Test;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
-use Savia\NubeFactIntegration\Lines\Item;
-use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
 use Savia\NubeFactIntegration\Projection\LineProjection;
 use Savia\NubeFactIntegration\Projection\LineProjections;
+use Savia\NubeFactIntegration\Tests\Support\BillableItem;
 use Savia\NubeFactIntegration\Tests\TestCase;
 use Vaened\Support\Types\InvalidSafelistItem;
 
@@ -22,8 +21,7 @@ final class LineProjectionsTest extends TestCase
     #[Test]
     public function it_holds_line_projections(): void
     {
-        $projection = LineProjection::of(Line::onerous(
-            item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service()),
+        $projection = LineProjection::of(BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service())->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('590.00'),
             tax      : IGVTreatment::taxedIncluded(),
@@ -37,8 +35,7 @@ final class LineProjectionsTest extends TestCase
     {
         $this->expectException(InvalidSafelistItem::class);
 
-        new LineProjections([Line::onerous(
-            item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service()),
+        new LineProjections([BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service())->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of('590.00'),
             tax      : IGVTreatment::taxedIncluded(),

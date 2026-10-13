@@ -19,9 +19,7 @@ use Savia\NubeFactIntegration\Keywords\IdentificationType;
 use Savia\NubeFactIntegration\Keywords\IgvRate;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
-use Savia\NubeFactIntegration\Lines\Item;
-use Savia\NubeFactIntegration\Lines\Line;
-use Savia\NubeFactIntegration\Lines\Lines;
+use Savia\NubeFactIntegration\Lines\Items;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
 use Savia\NubeFactIntegration\Operation;
@@ -86,9 +84,8 @@ final readonly class SingleEntryItemTransaction implements FinancialTransaction
 
     public function operation(): Operation
     {
-        return Operation::of(Currency::PEN, IgvRate::standard(), new Lines([
-            Line::onerous(
-                item     : Item::of($this->code(), $this->description(), Unit::service()),
+        return Operation::of(Currency::PEN, IgvRate::standard(), new Items([
+            BillableItem::of($this->code(), $this->description(), Unit::service())->sold(
                 quantity : Quantity::of($this->quantity()),
                 unitPrice: Amount::of(sprintf('%.2f', $this->unitaryPrice())),
                 tax      : IGVTreatment::taxedIncluded(),

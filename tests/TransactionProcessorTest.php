@@ -15,7 +15,7 @@ use Savia\NubeFactIntegration\LoggerRepository;
 use Savia\NubeFactIntegration\Responses\Error;
 use Savia\NubeFactIntegration\Responses\Success;
 use Savia\NubeFactIntegration\Sender;
-use Savia\NubeFactIntegration\Tests\Support\LinesTransaction;
+use Savia\NubeFactIntegration\Tests\Support\ItemsTransaction;
 use Savia\NubeFactIntegration\TransactionProcessor;
 
 use function json_encode;
@@ -26,7 +26,7 @@ final class TransactionProcessorTest extends TestCase
     public function it_turns_an_accepted_document_into_a_success_and_logs_it(): void
     {
         $logger      = self::logger();
-        $transaction = new LinesTransaction();
+        $transaction = new ItemsTransaction();
 
         $responses = (new TransactionProcessor(self::senderAnswering(new Response(200, [], (string) json_encode([
             'aceptada_por_sunat' => true,
@@ -53,7 +53,7 @@ final class TransactionProcessorTest extends TestCase
         );
 
         $responses = (new TransactionProcessor(self::senderThrowing($exception), $logger))
-            ->process(FinancialTransactions::from([new LinesTransaction()]))
+            ->process(FinancialTransactions::from([new ItemsTransaction()]))
             ->values();
 
         self::assertInstanceOf(Error::class, $responses[0]);
@@ -70,7 +70,7 @@ final class TransactionProcessorTest extends TestCase
         $sender = self::senderAnswering(new Response(200, [], (string) json_encode(['aceptada_por_sunat' => true])));
 
         $responses = (new TransactionProcessor($sender))
-            ->process(FinancialTransactions::from([new LinesTransaction(), new LinesTransaction()]))
+            ->process(FinancialTransactions::from([new ItemsTransaction(), new ItemsTransaction()]))
             ->values();
 
         self::assertCount(2, $responses);

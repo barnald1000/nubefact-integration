@@ -8,12 +8,11 @@ use PHPUnit\Framework\Attributes\Test;
 use Savia\NubeFactIntegration\Actions\Payments\HeaderSchema;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
-use Savia\NubeFactIntegration\Lines\Item;
-use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
 use Savia\NubeFactIntegration\Projection\DocumentProjection;
-use Savia\NubeFactIntegration\Tests\Support\LinesTransaction;
+use Savia\NubeFactIntegration\Tests\Support\BillableItem;
+use Savia\NubeFactIntegration\Tests\Support\ItemsTransaction;
 use Savia\NubeFactIntegration\Tests\TestCase;
 
 final class HeaderSchemaTest extends TestCase
@@ -21,7 +20,7 @@ final class HeaderSchemaTest extends TestCase
     #[Test]
     public function it_takes_identity_from_the_transaction_and_amounts_from_the_projection(): void
     {
-        $header = (new HeaderSchema(DocumentProjection::of(new LinesTransaction(
+        $header = (new HeaderSchema(DocumentProjection::of(new ItemsTransaction(
             self::line('590.00', IGVTreatment::taxedIncluded(), '118.00'),
             self::line('100.00', IGVTreatment::exonerated()),
         ))))->value();
@@ -44,7 +43,7 @@ final class HeaderSchemaTest extends TestCase
     #[Test]
     public function it_sends_every_header_field_nubefact_receives_today(): void
     {
-        $header = (new HeaderSchema(DocumentProjection::of(new LinesTransaction(
+        $header = (new HeaderSchema(DocumentProjection::of(new ItemsTransaction(
             self::line('118.00', IGVTreatment::taxedIncluded()),
         ))))->value();
 
@@ -72,10 +71,9 @@ final class HeaderSchemaTest extends TestCase
         ], $header);
     }
 
-    private static function line(string $price, IGVTreatment $treatment, ?string $discount = null): Line
+    private static function line(string $price, IGVTreatment $treatment, ?string $discount = null): BillableItem
     {
-        return Line::onerous(
-            item     : Item::of('MAT-001', 'Matrícula 2026', Unit::service()),
+        return BillableItem::of('MAT-001', 'Matrícula 2026', Unit::service())->sold(
             quantity : Quantity::of(1),
             unitPrice: Amount::of($price),
             tax      : $treatment,

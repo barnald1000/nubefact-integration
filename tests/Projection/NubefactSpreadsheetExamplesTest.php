@@ -9,13 +9,12 @@ use Savia\NubeFactIntegration\Actions\Payments\HeaderSchema;
 use Savia\NubeFactIntegration\Actions\Payments\LineSchema;
 use Savia\NubeFactIntegration\Lines\Amount;
 use Savia\NubeFactIntegration\Lines\IGVTreatment;
-use Savia\NubeFactIntegration\Lines\Item;
-use Savia\NubeFactIntegration\Lines\Line;
 use Savia\NubeFactIntegration\Lines\Quantity;
 use Savia\NubeFactIntegration\Lines\Unit;
 use Savia\NubeFactIntegration\Projection\DocumentProjection;
 use Savia\NubeFactIntegration\Projection\LineProjection;
-use Savia\NubeFactIntegration\Tests\Support\LinesTransaction;
+use Savia\NubeFactIntegration\Tests\Support\BillableItem;
+use Savia\NubeFactIntegration\Tests\Support\ItemsTransaction;
 use Savia\NubeFactIntegration\Tests\TestCase;
 
 use function array_intersect_key;
@@ -133,9 +132,9 @@ final class NubefactSpreadsheetExamplesTest extends TestCase
     /**
      * @return array{array<string, float>, list<array<string, int|float>>}
      */
-    private static function send(Line ...$lines): array
+    private static function send(BillableItem ...$lines): array
     {
-        $transaction = new LinesTransaction(...$lines);
+        $transaction = new ItemsTransaction(...$lines);
         $document    = $transaction->operation()->project();
         $header      = array_intersect_key((new HeaderSchema(DocumentProjection::of($transaction)))->value(), self::MONEY_FIELDS);
         $items       = array_map(
@@ -151,10 +150,9 @@ final class NubefactSpreadsheetExamplesTest extends TestCase
         return array_map(static fn(string $key): int|float => $values[$key], array_combine(array_keys($order), array_keys($order)));
     }
 
-    private static function line(int $quantity, string $unitPrice, IGVTreatment $treatment, ?string $discount = null): Line
+    private static function line(int $quantity, string $unitPrice, IGVTreatment $treatment, ?string $discount = null): BillableItem
     {
-        return Line::onerous(
-            item     : Item::of('P001', 'DETALLE', Unit::product()),
+        return BillableItem::of('P001', 'DETALLE', Unit::product())->sold(
             quantity : Quantity::of($quantity),
             unitPrice: Amount::of($unitPrice),
             tax      : $treatment,
