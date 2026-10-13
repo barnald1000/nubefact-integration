@@ -5,21 +5,26 @@
 Emisión de facturas y boletas electrónicas a [Nubefact](https://www.nubefact.com) para PHP 8.2+, con todos los importes calculados por la librería.
 
 ```php
-// La aplicación describe los hechos de cada línea
-$line = Line::onerous(
-    item     : Item::of('CUOTA-03', 'Cuota marzo', Unit::service()),
-    quantity : Quantity::of(1),
-    unitPrice: Amount::of('500.00'),         // con IGV, antes del descuento
-    tax      : IGVTreatment::taxedIncluded(),
-    discount : Amount::of('250.00'),         // beca del 50 %, con IGV
-);
+// Cada ítem de la aplicación ($fee implementa Item) entrega su línea con los hechos
+public function line(): Line
+{
+    return Line::onerous(
+        quantity : Quantity::of(1),
+        unitPrice: Amount::of('500.00'),         // con IGV, antes del descuento
+        tax      : IGVTreatment::taxedIncluded(),
+        discount : Amount::of('250.00'),         // beca del 50 %, con IGV
+    );
+}
 
-// La operación reúne la moneda, la tasa y las líneas; la librería calcula sus importes
-$operation  = Operation::of(Currency::PEN, IgvRate::of(18), new Lines([$line]));
+// La operación reúne la moneda, la tasa y los ítems; la librería calcula sus importes
+$operation  = Operation::of(Currency::PEN, IgvRate::of(18), new Items([$fee]));
 $projection = $operation->project();
 $projection->totalTaxed();   // 211.86
 $projection->totalTaxes();   // 38.14
 $projection->total();        // 250.00
+
+// Cada resultado trae el mismo ítem del que se calculó
+$projection->lines()->items()[0]->item();   // $fee
 
 // El documento ($document implementa FinancialTransaction) entrega su operación y se envía a Nubefact
 $processor = new TransactionProcessor(new PaymentsSender(new GuzzleNubeFactService($url, $token)), $logger);
@@ -46,7 +51,7 @@ Solo se valida el dinero: importes, cantidades y descuentos. Nubefact no comprue
 
 La librería provee las líneas ([`Lines`](src/Lines)), la operación ([`Operation`](src/Operation.php)), las proyecciones con el cálculo ([`Projection`](src/Projection)), los esquemas del JSON ([`Actions/Payments`](src/Actions/Payments)), el envío ([`TransactionProcessor`](src/TransactionProcessor.php), [`GuzzleNubeFactService`](src/GuzzleNubeFactService.php)) y las respuestas ([`Responses`](src/Responses)).
 
-La aplicación implementa el contrato del documento, el del cliente y, si lo necesita, el registro de respuestas.
+La aplicación implementa el contrato del documento, el del ítem, el del cliente y, si lo necesita, el registro de respuestas.
 
 ### Fundamentos
 
@@ -60,6 +65,16 @@ La aplicación implementa el contrato del documento, el del cliente y, si lo nec
         - `issueDate(): DateTimeInterface` — fecha de emisión.
         - `operation(): Operation` — la [operación](#operación) del documento.
 
+- **Item**
+    - Contrato: [`Item`](src/Contracts/Item.php)
+    - Representa un detalle del documento tal como lo conoce la aplicación:
+        - `code(): ?string` — código interno opcional.
+        - `description(): string` — descripción.
+        - `unit(): Unit` — unidad de medida.
+        - `sunatCode(): ?string` — código de producto SUNAT opcional.
+        - `line(): Line` — la [línea](#líneas) con los importes del ítem. Se lee una vez por cálculo.
+    - Cada resultado del cálculo devuelve el mismo objeto con `LineProjection::item()`, así que la aplicación no necesita emparejar resultados con sus ítems.
+
 - **Customer**
     - Contrato: [`Customer`](src/Contracts/Customer.php), extiende [`Identifiable`](src/Contracts/Identifiable.php).
     - Provee `identificationType(): IdentificationType`, `identificationNumber(): string`, `denomination(): string`, `email(): ?string` y `address(): ?string`.
@@ -71,11 +86,10 @@ La aplicación implementa el contrato del documento, el del cliente y, si lo nec
 
 ## Líneas
 
-Una línea describe una operación onerosa con sus hechos:
+Una línea contiene los hechos monetarios de un ítem oneroso. La crea el ítem en `line()`:
 
 ```php
 Line::onerous(
-    item     : Item::of(code: 'LIB-01', description: 'Libro de álgebra', unit: Unit::product(), sunatCode: '55101500'),
     quantity : Quantity::of(3),
     unitPrice: Amount::of('80.00'),
     tax      : IGVTreatment::taxedIncluded(),
@@ -83,7 +97,6 @@ Line::onerous(
 );
 ```
 
-- [`Item`](src/Lines/Item.php) — código interno opcional, descripción, unidad y código de producto SUNAT opcional.
 - [`Unit`](src/Lines/Unit.php) — `Unit::product()` (`NIU`), `Unit::service()` (`ZZ`) o `Unit::of($codigo)` para una unidad creada en la cuenta de Nubefact.
 - [`Quantity`](src/Lines/Quantity.php) — entero mayor que cero.
 - [`Amount`](src/Lines/Amount.php) — importe no negativo de hasta 2 decimales. No lleva moneda; la moneda es del documento.
@@ -106,16 +119,16 @@ Una misma venta puede expresarse de las dos formas gravadas: `taxedIncluded()` c
 
 ## Operación
 
-[`Operation`](src/Operation.php) reúne los hechos que se calculan juntos: la moneda, la tasa de IGV y las líneas. Son inseparables, de modo que todas las líneas se calculan con la misma tasa que se envía en la cabecera. La operación existe antes que el documento: sus importes pueden calcularse al registrar la venta, sin serie ni número.
+[`Operation`](src/Operation.php) reúne los hechos que se calculan juntos: la moneda, la tasa de IGV y los ítems. Son inseparables, de modo que todos los ítems se calculan con la misma tasa que se envía en la cabecera. La operación existe antes que el documento: sus importes pueden calcularse al registrar la venta, sin serie ni número.
 
 ```php
-$operation = Operation::of(Currency::PEN, IgvRate::of(18), $lines);
+$operation = Operation::of(Currency::PEN, IgvRate::of(18), $items);
 $operation->project();   // OperationProjection
 ```
 
 - [`Currency`](src/Keywords/Currency.php): `PEN`, `USD`, `EUR`.
 - [`IgvRate::of()`](src/Keywords/IgvRate.php) recibe un porcentaje (`int` o `float`) mayor que 0, de hasta 100 y con hasta 2 decimales, por ejemplo `IgvRate::of(18)` o `IgvRate::of(18.00)`. `IgvRate::standard()` es la tasa general de 18 %.
-- [`Lines`](src/Lines/Lines.php) es la colección de líneas.
+- [`Items`](src/Lines/Items.php) es la colección de ítems.
 
 ## Cálculo
 
@@ -139,12 +152,12 @@ Una proyección contiene los importes calculados de una operación o de una lín
 
 - **OperationProjection**
     - Servicio: [`OperationProjection`](src/Projection/OperationProjection.php)
-    - Se obtiene con `$operation->project()`. Calcula cada línea con la tasa de la operación y suma la cabecera. No tiene identidad de documento.
+    - Se obtiene con `$operation->project()`. Calcula cada ítem con la tasa de la operación y suma la cabecera. No tiene identidad de documento.
     - Expone `lines(): LineProjections`, `subtotal()` (suma de los subtotales de todas las líneas), `totalTaxed()`, `totalExonerated()`, `totalUnaffected()`, `totalDiscounts()`, `totalTaxes()` y `total()`.
 
 - **LineProjection**
     - Servicio: [`LineProjection`](src/Projection/LineProjection.php)
-    - La crea `OperationProjection` y se lee desde `lines()`. `LineProjection::of()` es público por limitación del lenguaje, pero es de uso interno.
+    - La crea `OperationProjection` por cada ítem y se lee desde `lines()`; `item()` devuelve ese mismo ítem. `LineProjection::of()` es público por limitación del lenguaje, pero es de uso interno.
     - Expone `subtotal()`, `totalTaxes()`, `total()`, `totalDiscounts()` (antes de IGV), `unitValue()`, `unitPrice()`, `igvType()`, `item()` y `quantity()`.
 
 Ambas implementan [`Totalizable`](src/Contracts/Totalizable.php): `subtotal()`, `total()`, `totalDiscounts()` y `totalTaxes()`.
@@ -182,7 +195,7 @@ $responses = $processor->process(FinancialTransactions::from($documents));
 |------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | `InvalidLine` (`DomainException`)              | Un importe negativo o con más de 2 decimales, una cantidad no positiva, un precio cero, un descuento mayor que la línea o una clave de tratamiento desconocida. |
 | `InvalidIgvRate` (`DomainException`)           | Una tasa de IGV menor o igual que 0, mayor que 100, no finita o con más de 2 decimales.                                             |
-| `InvalidSafelistItem`                          | Una colección tipada (`Lines`, `LineProjections`, `FinancialTransactions`) recibe un elemento de otro tipo.                                     |
+| `InvalidSafelistItem`                          | Una colección tipada (`Items`, `LineProjections`, `FinancialTransactions`) recibe un elemento de otro tipo.                                     |
 | `InvalidPaymentStructure` (`RuntimeException`) | A un esquema le falta una clave requerida por Nubefact.                                                                                       |
 | `LogicException`                               | Una línea tiene un tipo de IGV sin total de cabecera soportado.                                                                               |
 
@@ -202,4 +215,4 @@ vendor/bin/phpunit
 - [`CHANGELOG.md`](CHANGELOG.md): cambios por versión.
 - Reglas de Nubefact verificadas sobre una grilla de líneas: [`tests/Projection/NubefactRulesTest.php`](tests/Projection/NubefactRulesTest.php).
 - Ejemplos del Excel de Nubefact reproducidos campo por campo: [`tests/Projection/NubefactSpreadsheetExamplesTest.php`](tests/Projection/NubefactSpreadsheetExamplesTest.php).
-- Implementación mínima de `FinancialTransaction`: [`tests/Support/LinesTransaction.php`](tests/Support/LinesTransaction.php).
+- Implementaciones mínimas de `FinancialTransaction` e `Item`: [`tests/Support/ItemsTransaction.php`](tests/Support/ItemsTransaction.php) y [`tests/Support/BillableItem.php`](tests/Support/BillableItem.php).

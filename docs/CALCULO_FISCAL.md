@@ -17,7 +17,7 @@ Boletas y facturas con operaciones onerosas. No cubre notas de crédito y débit
 | Descuento          | Línea       | Reducción de toda la línea, no por unidad.                           |
 | Tratamiento de IGV | Línea       | Cómo tributa la línea y en qué base vienen el precio y el descuento. |
 
-El precio unitario y el descuento tienen hasta 2 decimales y siempre están en la misma base: ambos incluyen IGV o ninguno lo incluye. La tasa no forma parte de la línea: es de la operación, que reúne la moneda, la tasa y las líneas, de modo que todas las líneas se calculan con la misma tasa que se envía en la cabecera.
+El precio unitario y el descuento tienen hasta 2 decimales y siempre están en la misma base: ambos incluyen IGV o ninguno lo incluye. La tasa no forma parte de la línea: es de la operación, que reúne la moneda, la tasa y los ítems con sus líneas, de modo que todas las líneas se calculan con la misma tasa que se envía en la cabecera.
 
 ## Tratamientos de IGV
 
